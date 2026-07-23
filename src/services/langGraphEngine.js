@@ -223,41 +223,54 @@ export function extractMemoryEntities(text, currentMemory) {
     }
   });
 
-  // 5. Dynamic Title & Industry Extraction (Only set if projectTitle is not already established)
-  if (!memory.projectTitle) {
+  // 5. Dynamic Title & Industry Extraction (Allows dynamic topic switching if new project described)
+  const isNewTopicInput = text.length > 15 && ['want', 'need', 'build', 'create', 'make', 'app', 'website', 'platform', 'movie', 'video', 'store', 'clinic', 'health', 'fintech'].some(k => lower.includes(k));
+  if (!memory.projectTitle || isNewTopicInput) {
+    let newTitle = null;
+    let newInd = null;
+
     if (lower.includes('wordpress') || lower.includes('elementor')) {
-      memory.projectTitle = 'WordPress Custom Website';
-      memory.industry = 'CMS & Business Web';
+      newTitle = 'WordPress Custom Website';
+      newInd = 'CMS & Business Web';
       if (!memory.techStack.includes('WordPress')) memory.techStack.push('WordPress', 'PHP', 'MySQL', 'Elementor');
-    } else if (lower.includes('netflix') || lower.includes('hotstar') || lower.includes('hulu') || lower.includes('ott') || lower.includes('movie') || lower.includes('stream') || lower.includes('upload movie') || lower.includes('cinema') || lower.includes('video')) {
-      memory.projectTitle = 'Video Streaming & Movie OTT Platform';
-      memory.industry = 'Media & Entertainment / OTT';
-      if (!memory.techStack.includes('Node.js')) memory.techStack.push('React', 'Node.js', 'AWS S3', 'CloudFront', 'FFmpeg', 'HLS');
-    } else if (lower.includes('face swap') || lower.includes('face-swap') || lower.includes('deepfake') || lower.includes('voice clone')) {
-      memory.projectTitle = 'AI Video Synthesis & Face-Swap Engine';
-      memory.industry = 'Generative AI';
-      if (!memory.techStack.includes('Python')) memory.techStack.push('Python', 'FastAPI', 'PyTorch', 'FFmpeg', 'ElevenLabs API');
+    } else if (lower.includes('movie') || lower.includes('face') || lower.includes('video') || lower.includes('character') || lower.includes('deepfake')) {
+      newTitle = 'AI Movie & Face-Swap Video Platform';
+      newInd = 'Media & Generative AI';
+      memory.techStack = ['Python', 'FastAPI', 'PyTorch', 'FFmpeg', 'ElevenLabs API', 'React'];
+    } else if (lower.includes('netflix') || lower.includes('hotstar') || lower.includes('hulu') || lower.includes('ott') || lower.includes('stream') || lower.includes('cinema')) {
+      newTitle = 'Video Streaming & Movie OTT Platform';
+      newInd = 'Media & Entertainment / OTT';
+      memory.techStack = ['React', 'Node.js', 'AWS S3', 'CloudFront', 'FFmpeg', 'HLS'];
     } else if (lower.includes('pet') || lower.includes('pets') || lower.includes('animal')) {
-      memory.projectTitle = 'Pet E-Commerce Platform';
-      memory.industry = 'Retail & E-Commerce';
+      newTitle = 'Pet E-Commerce Platform';
+      newInd = 'Retail & E-Commerce';
     } else if (lower.includes('e-commerce') || lower.includes('ecommerce') || lower.includes('ecomm') || lower.includes('store') || lower.includes('shopping') || lower.includes('bakery') || lower.includes('shop') || lower.includes('sell')) {
-      memory.projectTitle = 'E-Commerce Platform & Online Store';
-      memory.industry = 'Retail & E-Commerce';
+      newTitle = 'E-Commerce Platform & Online Store';
+      newInd = 'Retail & E-Commerce';
     } else if (lower.includes('fintech') || lower.includes('payment') || lower.includes('banking') || lower.includes('wallet') || lower.includes('fraud')) {
-      memory.projectTitle = 'FinTech Payment Gateway Platform';
-      memory.industry = 'FinTech & Payments';
+      newTitle = 'FinTech Payment Gateway Platform';
+      newInd = 'FinTech & Payments';
     } else if (lower.includes('telehealth') || lower.includes('health') || lower.includes('medical') || lower.includes('hipaa') || lower.includes('doctor') || lower.includes('clinic') || lower.includes('dental')) {
-      memory.projectTitle = lower.includes('dental') ? 'Dental Clinic Website' : 'HIPAA Compliant Telehealth Portal';
-      memory.industry = 'Healthcare & Medical';
+      newTitle = lower.includes('dental') ? 'Dental Clinic Website' : 'HIPAA Compliant Telehealth Portal';
+      newInd = 'Healthcare & Medical';
     } else if (lower.includes('resume') || lower.includes('screening') || lower.includes('parsing') || lower.includes('hiring')) {
-      memory.projectTitle = 'AI Resume Screening & Hiring Parser';
-      memory.industry = 'HR Tech & Recruitment';
+      newTitle = 'AI Resume Screening & Hiring Parser';
+      newInd = 'HR Tech & Recruitment';
     } else if (text.trim().length > 10 && !lower.includes('remember') && !lower.includes('how much') && !lower.includes('for less') && !lower.includes('giving me')) {
       const stopWords = new Set(['need', 'want', 'please', 'generate', 'create', 'build', 'for', 'this', 'app', 'with', 'my', 'budget', 'is', 'low', 'suggest', 'nvp', 'time', 'should', 'months', 'weeks', 'developers', 'people', 'team', 'less', 'giving', 'more', 'they', 'them', 'that']);
       const cleanWords = text.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w.toLowerCase())).slice(0, 4).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
       if (cleanWords.length > 3) {
-        memory.projectTitle = `${cleanWords} Platform`;
+        newTitle = `${cleanWords} Platform`;
+        newInd = 'Software & SaaS';
       }
+    }
+
+    if (newTitle && newTitle !== memory.projectTitle) {
+      memory.projectTitle = newTitle;
+      memory.industry = newInd;
+      memory.suggestedFeatures = null; // Reset features for new project topic!
+      memory.extractedRequirements = null;
+      memory.conversationPhase = null;
     }
   }
 
@@ -306,17 +319,20 @@ export function classifyIntent(text, memory) {
     return 'ARCHITECTURE';
   }
 
-  // If features were already suggested and user is responding with confirmations/selections
-  if (memory.conversationPhase === 'features_suggested') {
-    // User is confirming features, selecting, or saying "yes", "all", "these are fine", listing features etc.
-    return 'FEATURE_CONFIRMATION';
+  // Check if input is a short confirmation command
+  const isShortConfirmation = /^(all|yes|sure|ok|fine|everything|sounds good|go ahead|perfect|skip|remove|[0-9, ]+)$/i.test(lower.trim());
+
+  // Project Discovery — user describing a project idea
+  const projectKeywords = ['want', 'need', 'build', 'create', 'make', 'looking for', 'website', 'app', 'application', 'platform', 'portal', 'system', 'software', 'clinic', 'store', 'shop', 'marketplace', 'saas', 'tool', 'dashboard', 'management', 'booking', 'appointment', 'e-commerce', 'ecommerce', 'crm', 'erp', 'social', 'streaming', 'game', 'mobile', 'startup', 'project', 'movie', 'video', 'face', 'swap'];
+  const hasProjectIntent = projectKeywords.some(kw => lower.includes(kw));
+
+  if (hasProjectIntent && (lower.length > 15 || !isShortConfirmation)) {
+    return 'PROJECT_DISCOVERY';
   }
 
-  // Project Discovery — user describing a project idea (not an explicit cost/proposal command)
-  const projectKeywords = ['want', 'need', 'build', 'create', 'make', 'looking for', 'website', 'app', 'application', 'platform', 'portal', 'system', 'software', 'clinic', 'store', 'shop', 'marketplace', 'saas', 'tool', 'dashboard', 'management', 'booking', 'appointment', 'e-commerce', 'ecommerce', 'crm', 'erp', 'social', 'streaming', 'game', 'mobile', 'startup', 'project'];
-  const hasProjectIntent = projectKeywords.some(kw => lower.includes(kw));
-  if (hasProjectIntent && lower.length > 8) {
-    return 'PROJECT_DISCOVERY';
+  // If features were already suggested and user gives a short confirmation response
+  if (memory.conversationPhase === 'features_suggested' && isShortConfirmation) {
+    return 'FEATURE_CONFIRMATION';
   }
 
   return 'GENERAL_CONVERSATION';

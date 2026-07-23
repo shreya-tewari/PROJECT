@@ -179,25 +179,37 @@ def entity_extractor_node(state: AgentState) -> AgentState:
     memory["techStack"] = tech_stack
 
     # Dynamic Topic & Title Extraction
+    old_title = memory.get("projectTitle")
+    new_title = None
+    new_ind = None
+
     if "wordpress" in lower or "elementor" in lower:
-        memory["projectTitle"] = "WordPress Custom Website"
-        memory["industry"] = "CMS & Business Web"
-    elif any(k in lower for k in ["movie", "face", "video", "voice", "character", "comedy", "youtube", "laugh"]):
-        memory["projectTitle"] = "AI Movie & Face-Swap Video Platform"
-        memory["industry"] = "Media & Generative AI"
+        new_title = "WordPress Custom Website"
+        new_ind = "CMS & Business Web"
+    elif any(k in lower for k in ["movie", "face", "video", "voice", "character", "comedy", "youtube", "laugh", "deepfake"]):
+        new_title = "AI Movie & Face-Swap Video Platform"
+        new_ind = "Media & Generative AI"
     elif any(k in lower for k in ["e-commerce", "store", "shopping", "bakery", "shop"]):
-        memory["projectTitle"] = "E-Commerce Platform & Online Store"
-        memory["industry"] = "Retail & E-Commerce"
+        new_title = "E-Commerce Platform & Online Store"
+        new_ind = "Retail & E-Commerce"
     elif any(k in lower for k in ["fintech", "payment", "banking", "wallet", "fraud"]):
-        memory["projectTitle"] = "FinTech Payment Gateway Platform"
-        memory["industry"] = "FinTech & Payments"
-    elif any(k in lower for k in ["telehealth", "health", "medical", "hipaa", "doctor"]):
-        memory["projectTitle"] = "HIPAA Compliant Telehealth Portal"
-        memory["industry"] = "Healthcare & HIPAA"
+        new_title = "FinTech Payment Gateway Platform"
+        new_ind = "FinTech & Payments"
+    elif any(k in lower for k in ["telehealth", "health", "medical", "hipaa", "doctor", "clinic", "dental"]):
+        new_title = "Dental Clinic Website" if "dental" in lower else "HIPAA Compliant Telehealth Portal"
+        new_ind = "Healthcare & Medical"
     elif len(text.strip()) > 10 and not any(k in lower for k in ["remember", "how much"]):
         words = [w.capitalize() for w in text.split() if len(w) > 2 and w.lower() not in ["need", "want", "please", "generate", "create", "build", "for", "this", "app", "with", "my", "budget", "is", "low", "suggest", "nvp", "time", "months", "weeks", "developers"]]
         if len(words) >= 2:
-            memory["projectTitle"] = " ".join(words[:4]) + " Platform"
+            new_title = " ".join(words[:4]) + " Platform"
+            new_ind = "Software & SaaS"
+
+    if new_title and new_title != old_title:
+        memory["projectTitle"] = new_title
+        memory["industry"] = new_ind
+        memory["suggestedFeatures"] = None  # Clear old features for new topic!
+        memory["extractedRequirements"] = None
+        memory["conversationPhase"] = None
 
     state["memory_context"] = memory
     return state
