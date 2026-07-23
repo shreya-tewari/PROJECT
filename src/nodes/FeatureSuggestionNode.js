@@ -1,13 +1,15 @@
 /**
- * LLM-Driven Feature Synthesis Node
- * Dynamically synthesizes 5-6 features tailored specifically to the project description.
+ * LLM-Driven Feature Suggestion Node
+ * Renders structured project summary, recommends 5-6 features, and prompts for user approval.
+ * NEVER outputs pricing tables or developer costs at this stage.
  */
 
 import { FEATURE_TEMPLATES, synthesizeZeroShotFeatures } from '../data/featureTemplates';
 
 export async function runFeatureSuggestionNode(state) {
   const text = state.userInput || "";
-  const memory = { ...(state.memory || {}) };
+  const memory = state.memory || {};
+  const sj = memory.structuredJson || {};
   const lower = (text + " " + (memory.projectTitle || "")).toLowerCase();
 
   let features = [];
@@ -15,10 +17,10 @@ export async function runFeatureSuggestionNode(state) {
   if (state.apiKey && state.apiKey.length > 10) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey.trim()}`;
-      const prompt = `Synthesize 6 specific, non-generic feature modules for the software project "${memory.projectTitle || text}".
-Return strictly a valid JSON array of objects matching this schema:
+      const prompt = `Synthesize 6 core feature modules for project "${memory.projectTitle}".
+Return strictly a valid JSON array of objects:
 [
-  { "id": "feat-1", "name": "Feature Name", "description": "1 sentence description", "estimatedWeeks": 2 }
+  { "id": "feat-1", "name": "Feature Name", "description": "Short description", "estimatedWeeks": 2 }
 ]`;
 
       const res = await fetch(url, {
@@ -31,55 +33,52 @@ Return strictly a valid JSON array of objects matching this schema:
         const data = await res.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
         const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          features = JSON.parse(jsonMatch[0]);
-        }
+        if (jsonMatch) features = JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
-      console.warn("LLM Feature Synthesis failed, using dynamic synthesizer:", e);
+      console.warn("LLM Feature Synthesis failed:", e);
     }
   }
 
   if (!features || features.length === 0) {
-    if (['lead', 'scrape', 'scraping', 'linkedin', 'prospect', 'google sheet', 'outreach'].some(k => lower.includes(k))) {
-      features = FEATURE_TEMPLATES.lead_generation;
-    } else if (['movie', 'face', 'swap', 'deepfake', 'video', 'voice', 'character'].some(k => lower.includes(k))) {
+    if (['movie', 'face', 'swap', 'video', 'voice', 'comedy'].some(k => lower.includes(k))) {
       features = FEATURE_TEMPLATES.movie_faceswap;
-    } else if (['dental', 'clinic', 'doctor', 'hospital'].some(k => lower.includes(k))) {
-      features = FEATURE_TEMPLATES.dental_clinic;
-    } else if (['pet', 'pets', 'animal', 'dog'].some(k => lower.includes(k))) {
-      features = FEATURE_TEMPLATES.pet_ecommerce;
-    } else if (['e-commerce', 'ecommerce', 'store', 'shop'].some(k => lower.includes(k))) {
-      features = FEATURE_TEMPLATES.ecommerce;
+    } else if (['lead', 'scrape', 'linkedin', 'sheets'].some(k => lower.includes(k))) {
+      features = FEATURE_TEMPLATES.lead_generation;
     } else {
       features = synthesizeZeroShotFeatures(text);
     }
   }
 
-  memory.suggestedFeatures = features;
-  memory.workflowStep = "3_FEATURE_RECOMMENDATION";
+  const updatedMemory = {
+    ...memory,
+    suggestedFeatures: features,
+    workflowStep: "4_WAITING_FOR_FEATURE_APPROVAL",
+  };
 
   const totalWeeks = features.reduce((sum, f) => sum + (f.estimatedWeeks || f.durationWeeks || 2), 0);
 
-  let responseText = `📋 **Structured Project Summary & Features for ${memory.projectTitle || 'Software App'}**\n\n`;
-  responseText += `- **Industry**: ${memory.industry || 'Software & SaaS'}\n`;
-  responseText += `- **Complexity Tier**: ${memory.complexityScore >= 8 ? 'Enterprise' : memory.complexityScore >= 5 ? 'Large' : 'Medium'} Tier\n`;
-  responseText += `- **Recommended Stack**: ${memory.techStack?.join(', ') || 'React, Node.js, AWS'}\n\n`;
-  responseText += `💡 **Recommended 6 Key Feature Modules:**\n\n`;
+  let responseText = `👋 Hello! I've analyzed your requirements for **${memory.projectTitle || 'Software Application'}**.\n\n`;
+
+  responseText += `📌 **Business Requirements Summary:**\n`;
+  responseText += `- **Project Type**: ${sj.projectType || memory.projectTitle}\n`;
+  responseText += `- **Industry Sector**: ${sj.industry || memory.industry}\n`;
+  if (sj.targetUsers?.length > 0) responseText += `- **Target Users**: ${sj.targetUsers.join(', ')}\n`;
+  if (sj.aiRequirements?.length > 0) responseText += `- **AI/ML Requirements**: ${sj.aiRequirements.join(', ')}\n`;
+  if (sj.integrations?.length > 0) responseText += `- **Key Integrations**: ${sj.integrations.join(', ')}\n`;
+  responseText += `\n💡 **Recommended Core Feature Scope:**\n\n`;
 
   features.forEach((feat, index) => {
     const w = feat.estimatedWeeks || feat.durationWeeks || 2;
     responseText += `**${index + 1}. ${feat.name}** (~${w} week${w > 1 ? 's' : ''})\n${feat.description || feat.name}\n\n`;
   });
 
-  responseText += `⏱️ **Estimated Total Scope**: ~${totalWeeks} weeks of modular engineering work.\n\n`;
-  responseText += `Do you approve this feature scope? You can:\n`;
-  responseText += `- Reply **"Approved"** or **"Include All"** to proceed to the Technical Cloud Architecture\n`;
-  responseText += `- Specify numbers to customize (e.g. *"Include 1, 2, 4, 5"* or *"Skip 3"*)\n`;
+  responseText += `⏱️ **Estimated Engineering Effort**: ~${totalWeeks} weeks of modular development.\n\n`;
+  responseText += `Would you like to approve this scope, or modify any specific features before we review the **Technical Architecture**?`;
 
   return {
     ...state,
-    memory,
+    memory: updatedMemory,
     suggestedFeatures: features,
     response: {
       text: responseText,

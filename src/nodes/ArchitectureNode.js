@@ -1,6 +1,7 @@
 /**
  * ArchitectureNode
  * Single Responsibility: Return technical architecture recommendations by industry & complexity tier.
+ * Prompt user if they'd like to calculate pricing/cost estimate.
  */
 
 import { getArchitectureRecommendation } from '../templates/architectureTemplates';
@@ -17,16 +18,22 @@ export function runArchitectureNode(state) {
   text += `- **AI / Analytics Layer**: ${arch.aiLayer}\n`;
   text += `- **DevOps & CI/CD**: ${arch.deployment}\n`;
   text += `- **Security & Compliance**: ${arch.security}\n\n`;
-  text += `Would you like me to calculate the cost estimate or generate a complete Scope of Work (SOW) proposal based on this architecture?`;
+  text += `The scope and technical architecture have been configured!\n\nWould you like me to calculate the **itemized cost estimate** and team allocation now?`;
+
+  const updatedMemory = {
+    ...memory,
+    workflowStep: "6_WAITING_FOR_COST_REQUEST",
+  };
 
   return {
     ...state,
+    memory: updatedMemory,
     architecture: arch,
     response: {
       text,
       actionType: "architecture",
       devMatches: null,
-      quickReplies: ["Calculate cost estimate", "Generate SOW proposal", "Match available developers"],
+      quickReplies: ["Calculate cost estimate", "Show developer team", "Generate SOW proposal"],
     },
   };
 }

@@ -1,6 +1,6 @@
 /**
- * Multi-Step LangGraph Workflow Pipeline with Approval Checkpoints
- * Requirement Extraction -> Summary & Features -> Feature Approval -> Architecture -> Cost Request -> Dev Matching & Cost Estimation -> SOW Proposal
+ * Multi-Turn Presales Consultant Pipeline
+ * Flow: Requirement Extraction -> Project Summary & Features -> WAIT FOR APPROVAL -> Architecture -> WAIT FOR COST REQUEST -> Developer Matching & Cost Estimation -> SOW Proposal
  */
 
 import { runPreprocessNode } from '../nodes/PreprocessNode';
@@ -27,15 +27,15 @@ export async function executeProposalGraph(inputState) {
     // Step 1: Preprocess Node
     state = runPreprocessNode(state);
 
-    // Step 2: LLM-Driven Requirement Extraction Node
+    // Step 2: LLM Requirement Extraction Node (Returns Structured JSON Schema)
     state = await runMemoryExtractNode(state);
 
-    // Step 3: RouterAgent (Multi-Agent Dispatcher)
+    // Step 3: RouterAgent Coordinator
     state = runRouterAgent(state);
 
     const activeAgent = state._activeAgent;
 
-    // Step 4: Execute Agent Flow matching strict workflow order
+    // Step 4: Dispatch to Agent
     if (activeAgent === "GreetingAgent") {
       if (state.intent === "GREETING") {
         state = runGreetingNode(state);
@@ -43,24 +43,24 @@ export async function executeProposalGraph(inputState) {
         state = runMemoryRecallNode(state);
       }
     } else if (activeAgent === "DiscoveryAgent") {
-      // Step 1 -> Step 2 -> Step 3
+      // Summary & Features (No Pricing!)
       state = await runDiscoveryAgent(state);
-      state.memory.workflowStep = "4_WAITING_FOR_FEATURE_APPROVAL";
+      state.memory = { ...state.memory, workflowStep: "4_WAITING_FOR_FEATURE_APPROVAL" };
     } else if (activeAgent === "ArchitectureAgent") {
-      // Step 4 Approval -> Step 5 Architecture Recommendation
+      // Feature Approval -> Technical Architecture Recommendation
       state = runFeatureConfirmationNode(state);
       state = runArchitectureAgent(state);
-      state.memory.workflowStep = "6_WAITING_FOR_COST_REQUEST";
+      state.memory = { ...state.memory, workflowStep: "6_WAITING_FOR_COST_REQUEST" };
     } else if (activeAgent === "EstimationAgent") {
-      // Step 6 Cost Request -> Step 7 Dev Matching -> Step 8 Cost Estimation
+      // Explicit Cost Request -> Developer Matching & Cost Estimation
       state = runEstimationAgent(state);
-      state.memory.workflowStep = "8_COST_ESTIMATED";
+      state.memory = { ...state.memory, workflowStep: "8_COST_ESTIMATED" };
     } else if (activeAgent === "ProposalAgent") {
-      // Step 9 Proposal Generation
+      // Explicit Proposal Request -> SOW Proposal Generation
       state = runProposalAgent(state);
-      state.memory.workflowStep = "9_PROPOSAL_GENERATED";
+      state.memory = { ...state.memory, workflowStep: "9_PROPOSAL_GENERATED" };
     } else {
-      // LLMAgent with Fallback Cascade
+      // LLM Fallback Cascade
       state = await runGeminiNode(state);
       if (state._llmFailed) {
         state = await runOpenAINode(state);

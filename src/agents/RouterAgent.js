@@ -1,6 +1,6 @@
 /**
- * RouterAgent with Strict Multi-Step Workflow Approval Checkpoints
- * Flow: Requirement Extraction -> Project Summary & Features -> User Feature Approval -> Architecture -> User Cost Request -> Dev Matching -> Cost Estimation -> Proposal
+ * RouterAgent with Multi-Turn Requirement Discovery & Approval Checkpoints
+ * Ensures pricing is NEVER returned during initial project description.
  */
 
 import { runIntentClassificationNode } from '../nodes/IntentClassificationNode';
@@ -12,24 +12,21 @@ export function runRouterAgent(state) {
   const currentStep = memory.workflowStep || "1_REQUIREMENT_EXTRACTION";
   const lowerInput = (state.userInput || "").toLowerCase();
 
+  const isCostRequest = ['cost', 'price', 'budget', 'estimate', 'how much', 'quote', 'rate', 'pricing', 'dollar', 'dolar'].some(k => lowerInput.includes(k));
+  const isProposalRequest = (lowerInput.includes("sow") || lowerInput.includes("proposal") || lowerInput.includes("draft")) && (lowerInput.includes("generate") || lowerInput.includes("create") || lowerInput.includes("make"));
+
   let assignedAgent = "DiscoveryAgent";
 
   if (intent === "GREETING" || intent === "MEMORY_RECALL") {
     assignedAgent = "GreetingAgent";
-  } else if (intent === "PROPOSAL_GENERATION") {
+  } else if (isProposalRequest) {
     assignedAgent = "ProposalAgent";
-  } else if (currentStep === "4_WAITING_FOR_FEATURE_APPROVAL" || lowerInput.includes("approve") || lowerInput.includes("yes") || lowerInput.includes("include") || lowerInput.includes("ok") || lowerInput.includes("skip")) {
-    if (!['cost', 'price', 'budget', 'how much', 'quote'].some(k => lowerInput.includes(k))) {
-      assignedAgent = "ArchitectureAgent";
-    } else {
-      assignedAgent = "EstimationAgent";
-    }
-  } else if (intent === "COST_ESTIMATION" || intent === "BENCH_MATCHING" || lowerInput.includes("cost") || lowerInput.includes("price") || lowerInput.includes("estimate") || lowerInput.includes("budget")) {
+  } else if (isCostRequest) {
     assignedAgent = "EstimationAgent";
-  } else if (intent === "ARCHITECTURE") {
+  } else if (currentStep === "4_WAITING_FOR_FEATURE_APPROVAL" || lowerInput.includes("approve") || lowerInput.includes("architecture") || lowerInput.includes("next")) {
     assignedAgent = "ArchitectureAgent";
-  } else if (intent === "GENERAL_CONVERSATION") {
-    assignedAgent = "LLMAgent";
+  } else if (currentStep === "6_WAITING_FOR_COST_REQUEST") {
+    assignedAgent = "EstimationAgent";
   } else {
     assignedAgent = "DiscoveryAgent";
   }

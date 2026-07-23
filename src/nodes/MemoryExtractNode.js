@@ -1,6 +1,6 @@
 /**
  * LLM-Driven Requirement Extraction Node
- * Extracts structured JSON project understanding: Title, Industry, Complexity, Features, and Tech Stack.
+ * Extracts structured JSON project understanding: projectType, industry, targetUsers, coreModules, optionalModules, techRequirements, aiRequirements, integrations, constraints.
  */
 
 export async function runMemoryExtractNode(state) {
@@ -8,90 +8,99 @@ export async function runMemoryExtractNode(state) {
   const memory = { ...(state.memory || {}) };
   const lower = text.toLowerCase();
 
-  // If text describes a new project requirement
   const isProjectRequirement = text.length > 15 && ['want', 'need', 'build', 'create', 'make', 'app', 'website', 'platform', 'system', 'tool', 'service', 'lead', 'scrape', 'movie', 'video'].some(k => lower.includes(k));
 
-  if (isProjectRequirement) {
-    // Structured JSON extraction payload
-    let structuredJson = null;
+  if (!isProjectRequirement && memory.structuredJson) {
+    return state;
+  }
 
-    if (state.apiKey && state.apiKey.length > 10) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey.trim()}`;
-        const prompt = `Extract software requirements from the text and return strictly a valid JSON object matching this schema:
+  let structuredJson = null;
+
+  if (state.apiKey && state.apiKey.length > 10) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey.trim()}`;
+      const prompt = `Extract software presales requirements from the input and return strictly a valid JSON object matching this schema:
 {
-  "projectTitle": "Descriptive Project Title",
-  "industry": "Industry Category",
-  "complexityScore": 1 to 10 integer,
-  "coreFeatures": ["Feature 1", "Feature 2", "Feature 3"],
-  "recommendedTechStack": ["Tech1", "Tech2"]
+  "projectType": "Short Title",
+  "industry": "Industry Sector",
+  "targetUsers": ["User Type 1", "User Type 2"],
+  "coreModules": ["Module 1", "Module 2"],
+  "optionalModules": ["Optional 1"],
+  "techRequirements": ["Frontend/Backend/Cloud"],
+  "aiRequirements": ["AI/ML Models if applicable"],
+  "integrations": ["APIs/Services"],
+  "constraints": ["Budget/Timeline constraints if any"]
 }
 
-Text: "${text}"`;
+Input: "${text}"`;
 
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] })
-        });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] })
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            structuredJson = JSON.parse(jsonMatch[0]);
-          }
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          structuredJson = JSON.parse(jsonMatch[0]);
         }
-      } catch (e) {
-        console.warn("LLM JSON extraction failed, using dynamic structured parser:", e);
       }
+    } catch (e) {
+      console.warn("LLM Requirement Extraction failed, using dynamic structured synthesizer:", e);
     }
-
-    if (!structuredJson) {
-      // Fallback Dynamic JSON Synthesizer
-      const rawWords = text.split(/\s+/).filter(w => w.length > 3 && !['want', 'need', 'build', 'create', 'make', 'app', 'with', 'for', 'this', 'that', 'some'].includes(w.toLowerCase()));
-      const titleWords = rawWords.slice(0, 4).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-
-      let ind = 'Software & SaaS';
-      let score = 5;
-      let stack = ['React', 'Node.js', 'PostgreSQL', 'AWS'];
-
-      if (['lead', 'scrape', 'scraping', 'linkedin', 'prospect', 'sheets'].some(k => lower.includes(k))) {
-        ind = 'B2B Growth & Automation';
-        score = 6;
-        stack = ['Python', 'FastAPI', 'Playwright', 'OpenAI API', 'Google Sheets API'];
-      } else if (['movie', 'face', 'swap', 'video', 'deepfake'].some(k => lower.includes(k))) {
-        ind = 'Media & Generative AI';
-        score = 9;
-        stack = ['Python', 'FastAPI', 'PyTorch', 'FFmpeg', 'ElevenLabs API'];
-      }
-
-      structuredJson = {
-        projectTitle: titleWords ? `${titleWords} Platform` : "Custom Software Platform",
-        industry: ind,
-        complexityScore: score,
-        coreFeatures: ["User Authentication & Access Portal", "Core Data Processing Engine", "Interactive Analytics Dashboard"],
-        recommendedTechStack: stack
-      };
-    }
-
-    memory.projectTitle = structuredJson.projectTitle;
-    memory.industry = structuredJson.industry;
-    memory.complexityScore = structuredJson.complexityScore;
-    memory.techStack = structuredJson.recommendedTechStack || ['React', 'Node.js', 'PostgreSQL', 'AWS'];
-    memory.structuredJson = structuredJson;
-    memory.extractedRequirements = structuredJson.coreFeatures;
-    memory.workflowStep = "1_REQUIREMENT_EXTRACTION";
   }
+
+  if (!structuredJson) {
+    let type = "Enterprise Software Platform";
+    let ind = "Software & SaaS";
+    let aiReqs = [];
+    let core = ["User Management & Auth Portal", "Core Analytics & Data Engine", "Admin Control Console"];
+
+    if (['movie', 'face', 'swap', 'video', 'voice', 'comedy', 'animation'].some(k => lower.includes(k))) {
+      type = "AI Movie & Face-Swap Video Platform";
+      ind = "Media & Generative AI";
+      aiReqs = ["Neural Face-Swap Pipeline (PyTorch)", "Voice Cloning & Audio Lip-Sync (ElevenLabs)", "AI Comedy Stage & Script Generator"];
+      core = ["HD Video Streaming & Upload Pipeline", "Neural Face-Swap Fusion Engine", "Voice Clone Audio Renderer", "Green Screen Comedy Stage", "Subscription Paywall"];
+    } else if (['lead', 'scrape', 'linkedin', 'sheets'].some(k => lower.includes(k))) {
+      type = "AI Lead Generation & Scraping Automation App";
+      ind = "B2B Growth & Automation";
+      aiReqs = ["LLM Lead Scoring & Sentiment Classifier"];
+      core = ["LinkedIn Data Scraper", "AI Lead Scoring Engine", "Google Sheets Sync", "Cold Email Pipeline"];
+    }
+
+    structuredJson = {
+      projectType: type,
+      industry: ind,
+      targetUsers: ["End Users", "Content Creators", "Administrators"],
+      coreModules: core,
+      optionalModules: ["Multi-Language Subtitles", "Mobile App Wrapper"],
+      techRequirements: ["React 18", "Python FastAPI", "PostgreSQL", "AWS S3 & CloudFront"],
+      aiRequirements: aiReqs,
+      integrations: ["Stripe Checkout Gateway", "Google Sheets API", "ElevenLabs API"],
+      constraints: memory.isLowBudget ? ["Cost-Optimized Execution Required"] : ["High-Performance & Scalable Topology Required"]
+    };
+  }
+
+  const updatedMemory = {
+    ...memory,
+    projectTitle: structuredJson.projectType || "Software Platform",
+    industry: structuredJson.industry || "Software & SaaS",
+    structuredJson,
+    techStack: structuredJson.techRequirements || ["React", "Node.js", "PostgreSQL", "AWS"],
+    extractedRequirements: structuredJson.coreModules || [],
+    workflowStep: memory.workflowStep === "9_PROPOSAL_GENERATED" ? "9_PROPOSAL_GENERATED" : "1_REQUIREMENT_EXTRACTION",
+  };
 
   return {
     ...state,
-    memory,
+    memory: updatedMemory,
     project: {
-      title: memory.projectTitle,
-      category: memory.industry,
-      industry: memory.industry,
+      title: updatedMemory.projectTitle,
+      category: updatedMemory.industry,
+      industry: updatedMemory.industry,
     },
   };
 }
