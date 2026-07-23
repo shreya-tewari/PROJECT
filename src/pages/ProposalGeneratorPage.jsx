@@ -25,6 +25,24 @@ import { useRef } from 'react';
 export function suggestFeaturesForPrompt(promptText = "") {
   const text = (promptText || "").toLowerCase();
 
+  // 0.0 If promptText explicitly contains "features: Feature 1, Feature 2..." from Chat prefill, extract them directly!
+  if (promptText && promptText.toLowerCase().includes("features:")) {
+    const featurePart = promptText.split(/features:/i)[1].split(/using/i)[0].trim();
+    const extractedList = featurePart.split(',').map(s => s.trim()).filter(s => s.length > 2);
+    if (extractedList.length > 0) {
+      return extractedList.map((featName, idx) => {
+        const lowerF = featName.toLowerCase();
+        const estWeeks = (lowerF.includes("portal") || lowerF.includes("assistant") || lowerF.includes("ai") || lowerF.includes("streaming") || lowerF.includes("custom")) ? 3 : 2;
+        return {
+          id: `extracted-feat-${idx}`,
+          name: featName,
+          durationWeeks: estWeeks,
+          selected: true
+        };
+      });
+    }
+  }
+
   // 0. Netflix / Hotstar / Movie Streaming / OTT / Videos / Cinema / Film
   if (text.includes("netflix") || text.includes("hotstar") || text.includes("hulu") || text.includes("movie") || text.includes("stream") || text.includes("video") || text.includes("ott") || text.includes("cinema") || text.includes("film")) {
     return [
@@ -50,7 +68,7 @@ export function suggestFeaturesForPrompt(promptText = "") {
   }
 
   // 0.2 Car Rental / Vehicle / Fleet / Transport
-  if (text.includes("car") || text.includes("vehicle") || text.includes("fleet") || text.includes("rental") || text.includes("pickup") || text.includes("dropoff")) {
+  if (/\b(car|rental|fleet|vehicle|transport|pickup|dropoff)\b/i.test(text)) {
     return [
       { id: "car-fleet", name: "Vehicle Fleet Catalog with Spec Comparison & Availability Filter", durationWeeks: 2, selected: true },
       { id: "car-reserve", name: "Pickup & Dropoff Location, Date & Time Slot Reservation System", durationWeeks: 2, selected: true },
@@ -110,7 +128,7 @@ export function suggestFeaturesForPrompt(promptText = "") {
   }
 
   // 5. Car Rental / Vehicle / Fleet / Automobile / Transport / Taxi
-  if (text.includes("car") || text.includes("vehicle") || text.includes("fleet") || text.includes("rental") || text.includes("auto") || text.includes("taxi") || text.includes("drive")) {
+  if (/\b(car|rental|fleet|vehicle|automobile|transport|taxi)\b/i.test(text)) {
     return [
       { id: "car-fleet", name: "Vehicle Fleet Catalog with Spec Comparison & Availability Filter", durationWeeks: 2, selected: true },
       { id: "car-book", name: "Pickup & Dropoff Location, Date & Time Slot Reservation System", durationWeeks: 2, selected: true },
