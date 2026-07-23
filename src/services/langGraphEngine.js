@@ -355,75 +355,73 @@ export async function generateFullSowProposal(memory, userInput = '', apiKey = n
 
       const sowPrompt = `You are an expert Enterprise Technology Consultant generating a professional Scope of Work (SOW) Proposal.
 
-PROJECT CONTEXT FROM DISCOVERY CONVERSATION:
+PROJECT CONTEXT:
 - Project Name: ${projTitle}
 - Client: ${clientName}
 - Industry: ${industry}
-- User's Mentioned Requirements: ${cleanTitle || userInput || 'General enterprise software platform'}
+- Mentioned Requirements: ${cleanTitle || userInput || 'General enterprise software platform'}
 - Preferred Tech Stack: ${stack.join(', ')}
 - Team Size: ${devCount} developers
 - Total Project Effort: ${totalHrs} person-hours (FIXED regardless of team size)
 - Calendar Timeline: ${duration} weeks delivery
 - Available Engineers: ${devListContext}
-- Extracted Requirements: ${memory.extractedRequirements?.join(', ') || 'To be detailed in proposal'}
 
-CRITICAL PRICING MODEL: Use person-hours based costing.
-Total effort = ${totalHrs} person-hours. Each developer is allocated hours based on their ROLE (not full weeks × 40hrs each).
+CRITICAL PRICING & ALLOCATION MODEL:
+Total effort = ${totalHrs} person-hours split across allocated developers by role.
 Role-based hour allocation:
 ${devBreakdownForSow.map(d => `- ${d.name} (${d.role}): ${d.hours} hrs × $${d.hourlyRate}/hr = $${d.cost.toLocaleString()}`).join('\n')}
 Total Engineering Cost: $${devCost.toLocaleString()}
 
-GENERATE a complete, professional SOW proposal in clean GitHub Markdown format with these EXACT sections:
+OUTPUT FORMAT (STRICT REQUIREMENT - Output in exact GitHub Markdown with these EXACT headings):
 
-## 📄 Scope of Work (SOW) Proposal
-**Proposal ID**: \`${propId}\` | **Client**: ${clientName} | **Industry**: ${industry}
+# Project Summary
 
----
-
-### 🎯 1. Executive Summary
-Write 3-4 sentences summarizing the project vision, business value, and key outcomes. Be specific to the project type and industry.
-
----
-
-### 🛠️ 2. Core Scope of Work & Deliverables
-List 5-7 specific deliverables tailored to this project (not generic). Each should be a concrete work item.
-
----
-
-### 🏗️ 3. Recommended Technical Stack
-Recommend specific technologies organized by tier (Frontend, Backend, Database, Cloud/DevOps, Security). Use the preferred stack but add your expert recommendations.
+- **Project Type**: ${industry} Platform (${projTitle})
+- **Complexity**: ${totalHrs >= 1200 ? 'Enterprise' : totalHrs >= 750 ? 'Large' : totalHrs >= 400 ? 'Medium' : 'Small'} — Project requires modular frontend, backend microservices, security compliance, and automated deployment pipelines.
+- **Major Features**: ${memory.extractedRequirements?.join(', ') || 'Core Workflow Engine, User Authentication, Admin Dashboard, Payment Gateway, Real-Time Telemetry'}
+- **Total Engineering Hours**: ${totalHrs} Person-Hours
+- **Recommended Team**: ${benchDevs.map(d => d.role).join(', ')} (${devCount} Developers)
+- **Timeline**: ${duration} Weeks (${Math.ceil(duration / 4)} Month${Math.ceil(duration / 4) > 1 ? 's' : ''})
+- **Milestones**:
+  - **Sprint 1-2**: Technical Specification, Data Modeling & CI/CD Cloud Setup
+  - **Sprint 3-${Math.round(duration * 0.5)}**: Backend APIs, Database Schemas & Core Microservices
+  - **Sprint ${Math.round(duration * 0.5) + 1}-${Math.round(duration * 0.85)}**: Frontend Integration, Payment Gateway & Admin Console
+  - **Sprint ${Math.round(duration * 0.85) + 1}-${duration}**: Security Audit, End-to-End QA Testing & Production Deployment
 
 ---
 
-### 👥 4. Dedicated Engineering Team Structure
-List the allocated team members with their role-specific hours and costs exactly as provided above. Do NOT change the numbers.
+# Engineering Team
+
+| Developer Name | Role | Hourly Rate | Allocated Hours | Cost |
+| :--- | :--- | :--- | :--- | :--- |
+${devBreakdownForSow.map(d => `| ${d.name} | ${d.role} | $${d.hourlyRate}/hr | ${d.hours} hrs | $${d.cost.toLocaleString()} |`).join('\n')}
 
 ---
 
-### 💰 5. Financial Investment & Cost Breakdown
-Use EXACTLY these numbers:
-- Total Project Effort: ${totalHrs} person-hours
-- Engineering Cost (role-based allocation): $${devCost.toLocaleString()}
-- Cloud Infrastructure: $3,500
-- 10% Contingency: $${Math.round(devCost * 0.10).toLocaleString()}
-- Grand Total: $${(devCost + 3500 + Math.round(devCost * 0.10)).toLocaleString()} USD
+# Financial Summary
+
+| Item | Description | Cost |
+| :--- | :--- | :--- |
+| **Engineering** | Total Engineering Labor (${totalHrs} Person-Hours) | $${devCost.toLocaleString()} |
+| **Infrastructure** | Database, Server & CI/CD Pipeline Setup | $500 |
+| **Third-Party APIs** | External Service Integrations & Payments | $1,500 |
+| **Cloud** | Managed Cloud Infrastructure Hosting | $1,500 |
+| **Deployment** | Production Cutover, Security & SSL Setup | $500 |
+| **Contingency (10%)** | Risk Reserve & Technical Buffer | $${Math.round(devCost * 0.10).toLocaleString()} |
+| **Grand Total** | **Total Project Investment** | **$${(devCost + 4000 + Math.round(devCost * 0.10)).toLocaleString()} USD** |
 
 ---
 
-### 📅 6. Project Roadmap & Delivery Timeline
-Create a detailed sprint-by-sprint plan for ${duration} weeks. Break it into phases (Discovery, Development, Testing, Deployment). Be specific about what happens in each phase.
+# Assumptions
 
----
-
-### 🔐 7. Risk Mitigation & Quality Assurance
-List 3-4 risk factors and mitigation strategies specific to this project type and industry.
+- **Key Assumptions**: Client will provide timely feedback within 48 hours for sprint reviews; API credentials and access will be provisioned during Sprint 1.
+- **Excluded Features**: Physical hardware integration, custom video streaming infrastructure from scratch, legacy data migration over 100GB.
+- **Optional Future Enhancements**: Advanced AI Predictive Analytics, Native Mobile Application Wrappers, Multi-Region Active-Active Database Replication.
 
 IMPORTANT RULES:
-- Be specific and contextual to the project type — do NOT be generic
-- Use the EXACT cost numbers provided above — do NOT recalculate
-- Format everything in clean GitHub Markdown
-- Do NOT add any preamble or explanation outside the SOW format
-- Only output the SOW document, nothing else`;
+- Use the EXACT numbers provided above — do NOT alter calculated costs or hours
+- Format everything in clean GitHub Markdown with exact section headings
+- Do NOT add any preamble or text before '# Project Summary'`;
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveKey.trim()}`;
       const res = await fetch(url, {
@@ -476,55 +474,51 @@ IMPORTANT RULES:
   };
 
   // Use AI-generated SOW if available, otherwise structured fallback
-  const devListMarkdown = devBreakdownForSow.map(d => `- **${d.name}** (${d.role}) — $${d.hourlyRate}/hr × ${d.hours} hrs = **$${d.cost.toLocaleString()}** [${d.empCode}]`).join('\n');
+  const devListTableRows = devBreakdownForSow.map(d => `| ${d.name} | ${d.role} | $${d.hourlyRate}/hr | ${d.hours} hrs | $${d.cost.toLocaleString()} |`).join('\n');
 
-  const fallbackSow = `## 📄 Scope of Work (SOW) Proposal
-**Proposal ID**: \`${propId}\` | **Client**: ${clientName} | **Industry**: ${industry}
+  const fallbackSow = `# Project Summary
 
----
-
-### 🎯 1. Executive Summary
-This Scope of Work proposal outlines the comprehensive technical strategy, architectural blueprint, dedicated engineering team, and financial breakdown for **${projTitle}**. Designed to deliver enterprise-grade performance, high reliability, and seamless scalability for the ${industry} sector.
-
----
-
-### 🛠️ 2. Core Scope of Work & Deliverables
-- **Architecture & System Design**: Scalable microservices topology tailored for **${projTitle}**
-- **Backend & API Gateway**: High-throughput REST & GraphQL microservices with JWT/OAuth2 authentication
-- **Frontend & UI/UX**: Responsive web application with real-time UI components
-- **Cloud Infrastructure**: Automated CI/CD deployment pipeline on **${stack.find(s => ['AWS', 'GCP', 'Azure'].includes(s)) || 'AWS Cloud'}**
-- **Security & Quality Assurance**: Automated testing, security audit logging, and compliance checks
+- **Project Type**: ${industry} Platform (${projTitle})
+- **Complexity**: ${totalHrs >= 1200 ? 'Enterprise' : totalHrs >= 750 ? 'Large' : totalHrs >= 400 ? 'Medium' : 'Small'} — Project requires modular frontend UI, high-throughput microservices backend, secure OAuth2/JWT authentication, and automated cloud CI/CD deployment.
+- **Major Features**: ${memory.extractedRequirements?.join(', ') || 'User Management & Auth, Interactive Dashboard, API Gateway, Real-Time Analytics, Multi-Tenant Database'}
+- **Total Engineering Hours**: ${totalHrs} Person-Hours
+- **Recommended Team**: ${benchDevs.map(d => d.role).join(', ')} (${devCount} Developers)
+- **Timeline**: ${duration} Weeks (${Math.ceil(duration / 4)} Month${Math.ceil(duration / 4) > 1 ? 's' : ''})
+- **Milestones**:
+  - **Sprint 1-2**: Technical Spec, Database Topology & Cloud CI/CD Pipeline
+  - **Sprint 3-${Math.round(duration * 0.5)}**: Backend APIs, Microservices & Data Storage Layer
+  - **Sprint ${Math.round(duration * 0.5) + 1}-${Math.round(duration * 0.85)}**: Frontend Integration, Admin Portal & Third-Party APIs
+  - **Sprint ${Math.round(duration * 0.85) + 1}-${duration}**: Security Audit, Performance Optimization, UAT Signoff & Production Launch
 
 ---
 
-### 🏗️ 3. Recommended Technical Stack
-- **Frontend**: ${stack.filter(s => ['React', 'Next.js', 'Vue', 'Angular', 'Flutter', 'TypeScript'].includes(s)).join(', ') || 'React 18 + Next.js (TypeScript)'}
-- **Backend**: ${stack.filter(s => ['Node.js', 'Python', 'Java', 'Go'].includes(s)).join(', ') || 'Node.js Express / Python FastAPI'}
-- **Database**: ${stack.filter(s => ['PostgreSQL', 'MongoDB', 'Redis'].includes(s)).join(', ') || 'PostgreSQL + Redis'}
-- **Cloud & DevOps**: ${stack.filter(s => ['AWS', 'Docker', 'Kubernetes'].includes(s)).join(', ') || 'AWS (ECS Fargate, S3 & RDS)'}
+# Engineering Team
+
+| Developer Name | Role | Hourly Rate | Allocated Hours | Cost |
+| :--- | :--- | :--- | :--- | :--- |
+${devListTableRows}
 
 ---
 
-### 👥 4. Dedicated Engineering Team (Role-Based Hour Allocation)
-> 💡 *Total project effort: **${totalHrs} person-hours**. Each developer works their specific module — not the full project duration. This is why costs remain consistent regardless of team size.*
+# Financial Summary
 
-${devListMarkdown}
+| Item | Description | Cost |
+| :--- | :--- | :--- |
+| **Engineering** | Total Engineering Labor (${totalHrs} Person-Hours) | $${devCost.toLocaleString()} |
+| **Infrastructure** | Database & Server Setup | $500 |
+| **Third-Party APIs** | External APIs & Payment Gateway Integration | $1,500 |
+| **Cloud** | Managed Cloud Hosting (${cloudCost >= 3500 ? 'Enterprise' : cloudCost >= 1500 ? 'Large' : cloudCost >= 800 ? 'Medium' : 'Small'}) | $${cloudCost.toLocaleString()} |
+| **Deployment** | CI/CD Pipeline & Production Cutover | $500 |
+| **Contingency (10%)** | Risk Reserve & Technical Buffer | $${contingency.toLocaleString()} |
+| **Grand Total** | **Total Project Investment** | **$${(devCost + 2500 + cloudCost + contingency).toLocaleString()} USD** |
 
 ---
 
-### 💰 5. Financial Investment & Cost Breakdown
-- **Engineering Cost (${totalHrs} person-hours, role-allocated)**: **$${devCost.toLocaleString()}**
-- **Cloud Infrastructure Setup**: **$${cloudCost.toLocaleString()}**
-- **10% Risk & Contingency Buffer**: **$${contingency.toLocaleString()}**
-- **Total Estimated Investment**: **$${grandTotal.toLocaleString()} USD**
+# Assumptions
 
----
-
-### 📅 6. Project Roadmap & Delivery Timeline
-- **Target Delivery**: **${duration} Weeks** (${Math.ceil(duration / 4)} Month${Math.ceil(duration / 4) > 1 ? 's' : ''})
-- **Sprint 1-2**: Technical Spec, DB Architecture & CI/CD Pipeline
-- **Sprint 3-${Math.round(duration * 0.6)}**: Backend APIs, Microservices & Core Frontend Development
-- **Sprint ${Math.round(duration * 0.6) + 1}-${duration}**: System Integration, Security Audit, UAT & Cloud Deployment`;
+- **Key Assumptions**: Client will provide prompt milestone feedback within 48 hours; all 3rd-party API keys (Stripe, Twilio, Cloud) will be provisioned in Sprint 1.
+- **Excluded Features**: Physical hardware integration, custom video streaming codec from scratch, legacy database migration exceeding 100GB.
+- **Optional Future Enhancements**: AI Predictive Analytics Suite, Native Mobile Apps (iOS & Android), Multi-Region Active-Active Database Replication.`;
 
   return {
     markdown: aiGeneratedSow || fallbackSow,
@@ -533,40 +527,35 @@ ${devListMarkdown}
 }
 
 
-// Helper to calculate realistic 2026 market-based cloud & third-party API infrastructure costs
-export function calculateRealisticInfrastructureCosts(promptText = '', projectTitle = '', industry = '') {
+// Helper to calculate infrastructure costs based on project complexity tier & prompt keywords
+export function calculateRealisticInfrastructureCosts(promptText = '', projectTitle = '', industry = '', complexityScore = 5) {
   const text = (promptText + ' ' + projectTitle + ' ' + industry).toLowerCase();
 
-  let cloudInfraCost = 1800;
-  let thirdPartyApiCost = 800;
-  let cloudInfraDescription = "AWS Cloud (ECS Fargate, RDS PostgreSQL Multi-AZ, Redis & CloudFront CDN)";
-  let thirdPartyApiDescription = "Essential APIs (Stripe, SendGrid, Auth0 & Sentry Telemetry)";
+  let cloudInfraCost = 800; // Default Medium
+  let thirdPartyApiCost = 400;
+  let cloudInfraDescription = "AWS Cloud Managed Services (ECS, RDS PostgreSQL, Redis & CDN)";
+  let thirdPartyApiDescription = "Essential APIs (Stripe Payment Gateway, Twilio SMS & Auth0)";
 
-  if (text.includes("movie") || text.includes("video") || text.includes("face") || text.includes("voice") || text.includes("comedy") || text.includes("laugh") || text.includes("deepfake") || text.includes("generative")) {
-    cloudInfraCost = 4500;
-    thirdPartyApiCost = 2800;
-    cloudInfraDescription = "AWS GPU Compute Cluster (g5.xlarge), S3 Video Storage & CloudFront Global CDN";
+  if (complexityScore >= 9 || text.includes("movie") || text.includes("video") || text.includes("streaming") || text.includes("deepfake") || text.includes("generative")) {
+    cloudInfraCost = 3500; // Enterprise Tier
+    thirdPartyApiCost = 2000;
+    cloudInfraDescription = "AWS Enterprise Cloud (GPU Compute Cluster, S3 Storage & CloudFront Global CDN)";
     thirdPartyApiDescription = "Google Gemini 1.5 Pro / OpenAI GPT-4o, ElevenLabs Audio & Pinecone Vector DB";
-  } else if (text.includes("wordpress") || text.includes("elementor") || text.includes("cms") || text.includes("cheap") || text.includes("low budget")) {
-    cloudInfraCost = 250;
+  } else if (complexityScore >= 7 || text.includes("hipaa") || text.includes("fintech") || text.includes("bank") || text.includes("telehealth")) {
+    cloudInfraCost = 1500; // Large Tier
+    thirdPartyApiCost = 1000;
+    cloudInfraDescription = "AWS Multi-AZ Encrypted Cloud Infrastructure (HIPAA/PCI-DSS Vault & Redis Cluster)";
+    thirdPartyApiDescription = "Stripe Payment Vault, Plaid API & Twilio SMS Gateway";
+  } else if (complexityScore <= 3 || text.includes("wordpress") || text.includes("elementor") || text.includes("cms") || text.includes("cheap") || text.includes("low budget") || text.includes("small")) {
+    cloudInfraCost = 300; // Small Tier
     thirdPartyApiCost = 150;
-    cloudInfraDescription = "Cloudflare Edge CDN, High-Performance WP Managed Hosting, SSL & Domain";
-    thirdPartyApiDescription = "Elementor Pro, WooCommerce Extensions & Anti-Spam API";
-  } else if (text.includes("telehealth") || text.includes("health") || text.includes("doctor") || text.includes("patient") || text.includes("hipaa")) {
-    cloudInfraCost = 3500;
-    thirdPartyApiCost = 1800;
-    cloudInfraDescription = "HIPAA-Compliant AWS Vault, RDS Encrypted Multi-AZ & Encrypted Audit Logging";
-    thirdPartyApiDescription = "WebRTC Video Suite, Twilio SMS Notifications & Encrypted EMR Integration";
-  } else if (text.includes("fintech") || text.includes("fraud") || text.includes("payment") || text.includes("bank") || text.includes("wallet")) {
-    cloudInfraCost = 3800;
-    thirdPartyApiCost = 2200;
-    cloudInfraDescription = "PCI-DSS Compliant AWS Microservices Gateway, Multi-Region RDS & Redis Cluster";
-    thirdPartyApiDescription = "Stripe Payment Vault, Plaid Banking API & Real-Time Fraud Rules Engine";
-  } else if (text.includes("ai") || text.includes("rag") || text.includes("resume") || text.includes("chatbot") || text.includes("screening")) {
-    cloudInfraCost = 2800;
-    thirdPartyApiCost = 1800;
-    cloudInfraDescription = "AWS ECS Microservices, Document Storage S3 & Redis Caching";
-    thirdPartyApiDescription = "OpenAI GPT-4o / Gemini Flash, Pinecone Vector Indexing & Document OCR Parser";
+    cloudInfraDescription = "Managed Cloud Hosting (Vercel / Cloudflare Edge CDN & PostgreSQL)";
+    thirdPartyApiDescription = "Stripe Gateway & Email Notification Service";
+  } else {
+    cloudInfraCost = 800; // Medium Tier
+    thirdPartyApiCost = 400;
+    cloudInfraDescription = "AWS Cloud (ECS Container, RDS Database & Redis Cache)";
+    thirdPartyApiDescription = "Stripe, SendGrid Email & Auth0 Authentication APIs";
   }
 
   return {
