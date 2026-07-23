@@ -365,9 +365,9 @@ export function ProposalGeneratorPage() {
 
   const isPrefilledRef = useRef(false);
 
-  // Auto-suggest features whenever promptText changes (only if NOT prefilled from chat)
+  // Auto-suggest features whenever promptText changes
   useEffect(() => {
-    if (promptText && promptText.trim().length > 5 && !isPrefilledRef.current) {
+    if (promptText && promptText.trim().length > 3 && !isPrefilledRef.current) {
       const suggested = suggestFeaturesForPrompt(promptText);
       setSuggestedFeatures(suggested);
     }
@@ -575,7 +575,10 @@ export function ProposalGeneratorPage() {
                 <textarea
                   rows={3}
                   value={promptText}
-                  onChange={(e) => setPromptText(e.target.value)}
+                  onChange={(e) => {
+                    isPrefilledRef.current = false;
+                    setPromptText(e.target.value);
+                  }}
                   placeholder="Type client requirement details or click Voice Input to speak..."
                   className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
                 />
