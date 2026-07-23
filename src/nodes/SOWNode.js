@@ -3,7 +3,7 @@
  * Single Responsibility: Format complete Markdown Scope of Work (SOW) proposal document.
  */
 
-import { buildSowPromptTemplate } from '../prompts/promptTemplates';
+import { buildSowPromptTemplate } from '../prompts/promptTemplates.js';
 
 export function runSOWNode(state) {
   const memory = state.memory || {};

@@ -3,8 +3,8 @@
  * Allows runtime registration of custom industry feature templates & architecture patterns.
  */
 
-import { FEATURE_TEMPLATES } from '../data/featureTemplates';
-import { ARCHITECTURE_TEMPLATES } from '../templates/architectureTemplates';
+import { FEATURE_TEMPLATES } from '../data/featureTemplates.js';
+import { ARCHITECTURE_TEMPLATES } from '../templates/architectureTemplates.js';
 
 class IndustryRegistry {
   constructor() {

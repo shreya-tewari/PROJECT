@@ -4,7 +4,7 @@
  * NEVER outputs pricing tables or developer costs at this stage.
  */
 
-import { FEATURE_TEMPLATES, synthesizeZeroShotFeatures } from '../data/featureTemplates';
+import { FEATURE_TEMPLATES, synthesizeZeroShotFeatures } from '../data/featureTemplates.js';
 
 export async function runFeatureSuggestionNode(state) {
   const text = state.userInput || "";

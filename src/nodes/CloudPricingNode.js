@@ -3,7 +3,7 @@
  * Single Responsibility: Compute cloud infrastructure hosting costs based on project tier.
  */
 
-import { calculateCloudPricing } from '../data/cloudPricing';
+import { calculateCloudPricing } from '../data/cloudPricing.js';
 
 export function runCloudPricingNode(state) {
   const memory = state.memory || {};

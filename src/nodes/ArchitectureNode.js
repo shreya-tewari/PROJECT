@@ -4,7 +4,7 @@
  * Prompt user if they'd like to calculate pricing/cost estimate.
  */
 
-import { getArchitectureRecommendation } from '../templates/architectureTemplates';
+import { getArchitectureRecommendation } from '../templates/architectureTemplates.js';
 
 export function runArchitectureNode(state) {
   const memory = state.memory || {};

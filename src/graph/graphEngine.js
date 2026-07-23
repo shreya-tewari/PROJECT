@@ -1,31 +1,30 @@
 /**
- * LangGraph Multi-Node Pipeline Orchestrator
- * Pipeline: Memory -> IntentClassifier -> Router -> Specialized Node -> Response
+ * Multi-Turn Presales Consultant Pipeline with Conversation Phase Guard Machine
  */
 
-import { runPreprocessNode } from '../nodes/PreprocessNode';
-import { runMemoryExtractNode } from '../nodes/MemoryExtractNode';
-import { runIntentClassificationNode } from '../nodes/IntentClassificationNode';
-import { routeIntent } from './router';
+import { runPreprocessNode } from '../nodes/PreprocessNode.js';
+import { runMemoryExtractNode } from '../nodes/MemoryExtractNode.js';
+import { runIntentClassificationNode } from '../nodes/IntentClassificationNode.js';
+import { routeIntent } from './router.js';
 
-import { runGreetingNode } from '../nodes/GreetingNode';
-import { runDiscoveryNode } from '../nodes/DiscoveryNode';
-import { runFeatureSuggestionNode } from '../nodes/FeatureSuggestionNode';
-import { runFeatureConfirmationNode } from '../nodes/FeatureConfirmationNode';
-import { runArchitectureNode } from '../nodes/ArchitectureNode';
-import { runDeveloperMatchingNode } from '../nodes/DeveloperMatchingNode';
-import { runHourEstimationNode } from '../nodes/HourEstimationNode';
-import { runTimelineNode } from '../nodes/TimelineNode';
-import { runCostEstimationNode } from '../nodes/CostEstimationNode';
-import { runCloudPricingNode } from '../nodes/CloudPricingNode';
-import { runApiPricingNode } from '../nodes/ApiPricingNode';
-import { runMarkdownResponseNode } from '../nodes/MarkdownResponseNode';
-import { runProposalNode } from '../nodes/ProposalNode';
-import { runSOWNode } from '../nodes/SOWNode';
-import { runGeminiNode } from '../nodes/GeminiNode';
-import { runOpenAINode } from '../nodes/OpenAINode';
-import { runFallbackNode } from '../nodes/FallbackNode';
-import { observability } from '../services/observabilityService';
+import { runGreetingNode } from '../nodes/GreetingNode.js';
+import { runDiscoveryNode } from '../nodes/DiscoveryNode.js';
+import { runFeatureSuggestionNode } from '../nodes/FeatureSuggestionNode.js';
+import { runFeatureConfirmationNode } from '../nodes/FeatureConfirmationNode.js';
+import { runArchitectureNode } from '../nodes/ArchitectureNode.js';
+import { runDeveloperMatchingNode } from '../nodes/DeveloperMatchingNode.js';
+import { runHourEstimationNode } from '../nodes/HourEstimationNode.js';
+import { runTimelineNode } from '../nodes/TimelineNode.js';
+import { runCostEstimationNode } from '../nodes/CostEstimationNode.js';
+import { runCloudPricingNode } from '../nodes/CloudPricingNode.js';
+import { runApiPricingNode } from '../nodes/ApiPricingNode.js';
+import { runMarkdownResponseNode } from '../nodes/MarkdownResponseNode.js';
+import { runProposalNode } from '../nodes/ProposalNode.js';
+import { runSOWNode } from '../nodes/SOWNode.js';
+import { runGeminiNode } from '../nodes/GeminiNode.js';
+import { runOpenAINode } from '../nodes/OpenAINode.js';
+import { runFallbackNode } from '../nodes/FallbackNode.js';
+import { observability } from '../services/observabilityService.js';
 
 export async function executeProposalGraph(inputState) {
   const spanId = observability.startSpan("executeProposalGraph", { userInput: inputState.userInput });

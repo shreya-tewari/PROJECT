@@ -3,23 +3,23 @@
  * Provides public API methods delegating to multi-agent orchestrator, checkpoint service, and observability.
  */
 
-import { createInitialProposalState } from '../types/proposalState';
-import { executeProposalGraph } from '../graph/graphEngine';
-import { runMemoryExtractNode } from '../nodes/MemoryExtractNode';
-import { runIntentClassificationNode } from '../nodes/IntentClassificationNode';
-import { runCloudPricingNode } from '../nodes/CloudPricingNode';
-import { runApiPricingNode } from '../nodes/ApiPricingNode';
-import { runDeveloperMatchingNode } from '../nodes/DeveloperMatchingNode';
-import { runHourEstimationNode } from '../nodes/HourEstimationNode';
-import { runTimelineNode } from '../nodes/TimelineNode';
-import { runCostEstimationNode } from '../nodes/CostEstimationNode';
-import { runProposalNode } from '../nodes/ProposalNode';
-import { runSOWNode } from '../nodes/SOWNode';
+import { createInitialProposalState } from '../types/proposalState.js';
+import { executeProposalGraph } from '../graph/graphEngine.js';
+import { runMemoryExtractNode } from '../nodes/MemoryExtractNode.js';
+import { runIntentClassificationNode } from '../nodes/IntentClassificationNode.js';
+import { runCloudPricingNode } from '../nodes/CloudPricingNode.js';
+import { runApiPricingNode } from '../nodes/ApiPricingNode.js';
+import { runDeveloperMatchingNode } from '../nodes/DeveloperMatchingNode.js';
+import { runHourEstimationNode } from '../nodes/HourEstimationNode.js';
+import { runTimelineNode } from '../nodes/TimelineNode.js';
+import { runCostEstimationNode } from '../nodes/CostEstimationNode.js';
+import { runProposalNode } from '../nodes/ProposalNode.js';
+import { runSOWNode } from '../nodes/SOWNode.js';
 
 // Advanced Enterprise Services
-import { saveCheckpoint, loadAllCheckpoints, getProposalVersions, restoreCheckpoint } from './checkpointService';
-import { observability } from './observabilityService';
-import { industryRegistry } from './industryRegistry';
+import { saveCheckpoint, loadAllCheckpoints, getProposalVersions, restoreCheckpoint } from './checkpointService.js';
+import { observability } from './observabilityService.js';
+import { industryRegistry } from './industryRegistry.js';
 
 /**
  * Creates initial conversation memory state

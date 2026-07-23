@@ -32,7 +32,7 @@ export function runIntentClassificationNode(state) {
     intent = "ARCHITECTURE";
   }
   // 6. Feature Scope Confirmation / Selection
-  else if (/^(all|yes|sure|ok|approved|include|include all|sounds good|go ahead|skip|remove|[0-9, ]+)$/i.test(lower) && lower.length < 35) {
+  else if (['all', 'include all', 'all features', 'include all features', 'approve', 'approved', 'sure', 'yes', 'sounds good', 'go ahead'].some(k => lower.includes(k)) && !lower.includes('cost') && !lower.includes('price')) {
     intent = "FEATURE_CONFIRMATION";
   }
   // 7. Project Discovery (Initial Description)

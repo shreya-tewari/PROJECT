@@ -3,7 +3,7 @@
  * Single Responsibility: Compute 3rd party API costs, 10% risk contingency buffer, and grand total.
  */
 
-import { calculateCloudPricing } from '../data/cloudPricing';
+import { calculateCloudPricing } from '../data/cloudPricing.js';
 
 export function runApiPricingNode(state) {
   const memory = state.memory || {};

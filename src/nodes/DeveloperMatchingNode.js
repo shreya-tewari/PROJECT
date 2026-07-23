@@ -3,7 +3,7 @@
  * Single Responsibility: Search and rank bench developers based on required skills and team composition rules.
  */
 
-import { matchBenchDevelopers } from '../services/ragEngine';
+import { matchBenchDevelopers } from '../services/ragEngine.js';
 
 export function runDeveloperMatchingNode(state) {
   const memory = state.memory || {};

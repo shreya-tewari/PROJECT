@@ -3,7 +3,7 @@
  * Single Responsibility: Execute Google Gemini API inference calls safely.
  */
 
-import { buildGeneralChatSystemPrompt } from '../prompts/promptTemplates';
+import { buildGeneralChatSystemPrompt } from '../prompts/promptTemplates.js';
 
 export async function runGeminiNode(state) {
   const memory = state.memory || {};
