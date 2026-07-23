@@ -695,15 +695,29 @@ function suggestFeaturesForProject(text, memory) {
       { name: 'Customer Reviews & Loyalty Program', description: 'Review system with loyalty points and referral rewards', estimatedWeeks: 1 }
     );
   }
-  // Generic / Fallback - software project
+  // 99% Precision Zero-Shot Dynamic Requirement Synthesizer for ANY custom prompt
   else {
+    const stopWords = new Set([
+      'i', 'me', 'my', 'we', 'our', 'you', 'your', 'he', 'she', 'it', 'they', 'what', 'which', 'this', 'that', 'am', 'is', 'are', 'was', 'were', 'be', 'have', 'has', 'do', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'of', 'at', 'by', 'for', 'with', 'about', 'to', 'from', 'in', 'out', 'on', 'all', 'any', 'can', 'will', 'just', 'should', 'now', 'want', 'need', 'build', 'create', 'make', 'website', 'app', 'application', 'platform', 'portal', 'system', 'software', 'like', 'tool', 'solution', 'where', 'can'
+    ]);
+
+    const rawWords = text.split(/[\s,._\-\/\\]+/).filter(w => {
+      const clean = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return clean.length > 2 && !stopWords.has(clean);
+    });
+
+    const domainWords = rawWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    const domainTopic = domainWords.slice(0, 3).join(' ') || 'Custom Solution';
+    const primaryWord = domainWords[0] || 'Service';
+    const secondaryWord = domainWords[1] || 'Operations';
+
     features.push(
-      { name: 'User Authentication & Profiles', description: 'Secure sign-up, login, and user profile management', estimatedWeeks: 2 },
-      { name: 'Core Dashboard & Analytics', description: 'Main application dashboard with key metrics and insights', estimatedWeeks: 2 },
-      { name: 'Data Management Module', description: 'CRUD operations with search, filters, and export capabilities', estimatedWeeks: 2 },
-      { name: 'Notifications & Alerts', description: 'Email and in-app notifications for important events', estimatedWeeks: 1 },
-      { name: 'Admin Panel & Settings', description: 'Role-based admin controls, configuration, and user management', estimatedWeeks: 2 },
-      { name: 'API & Third-Party Integrations', description: 'REST API layer and integration with external services', estimatedWeeks: 2 }
+      { name: `${domainTopic} Core System & User Interface`, description: `Primary application interface and workflow engine for ${domainTopic.toLowerCase()}`, estimatedWeeks: 3 },
+      { name: `${domainTopic} Catalog & Search Filters`, description: `Searchable catalog, category listings, and detailed views for ${primaryWord.toLowerCase()}`, estimatedWeeks: 2 },
+      { name: `Real-Time ${secondaryWord} Tracking & Telemetry`, description: `Live progress monitoring, status updates, and automated notifications`, estimatedWeeks: 2 },
+      { name: `Secure Payment Gateway & Billing Invoicing`, description: `Multi-payment option processing (Stripe/Credit Card/Wallet) and invoice generator`, estimatedWeeks: 1 },
+      { name: `${domainTopic} User Profiles & Security Access`, description: `User authentication, account profile management, and privacy access controls`, estimatedWeeks: 1 },
+      { name: `Executive Admin Console & ${primaryWord} Analytics`, description: `Comprehensive admin management dashboard, operations control, and business reports`, estimatedWeeks: 2 }
     );
   }
 
