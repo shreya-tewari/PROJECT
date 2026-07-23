@@ -229,10 +229,14 @@ export function extractMemoryEntities(text, currentMemory) {
       memory.projectTitle = 'WordPress Custom Website';
       memory.industry = 'CMS & Business Web';
       if (!memory.techStack.includes('WordPress')) memory.techStack.push('WordPress', 'PHP', 'MySQL', 'Elementor');
-    } else if (lower.includes('movie') || lower.includes('face') || lower.includes('video') || lower.includes('voice') || lower.includes('character') || lower.includes('comedy') || lower.includes('laugh')) {
-      memory.projectTitle = 'AI Movie & Face-Swap Video Platform';
-      memory.industry = 'Media & Generative AI';
-      if (!memory.techStack.includes('Python')) memory.techStack.push('Python', 'FastAPI', 'OpenAI API', 'PyTorch', 'React', 'FFmpeg', 'ElevenLabs API');
+    } else if (lower.includes('netflix') || lower.includes('hotstar') || lower.includes('hulu') || lower.includes('ott') || lower.includes('movie') || lower.includes('stream') || lower.includes('upload movie') || lower.includes('cinema') || lower.includes('video')) {
+      memory.projectTitle = 'Video Streaming & Movie OTT Platform';
+      memory.industry = 'Media & Entertainment / OTT';
+      if (!memory.techStack.includes('Node.js')) memory.techStack.push('React', 'Node.js', 'AWS S3', 'CloudFront', 'FFmpeg', 'HLS');
+    } else if (lower.includes('face swap') || lower.includes('face-swap') || lower.includes('deepfake') || lower.includes('voice clone')) {
+      memory.projectTitle = 'AI Video Synthesis & Face-Swap Engine';
+      memory.industry = 'Generative AI';
+      if (!memory.techStack.includes('Python')) memory.techStack.push('Python', 'FastAPI', 'PyTorch', 'FFmpeg', 'ElevenLabs API');
     } else if (lower.includes('pet') || lower.includes('pets') || lower.includes('animal')) {
       memory.projectTitle = 'Pet E-Commerce Platform';
       memory.industry = 'Retail & E-Commerce';
@@ -581,8 +585,19 @@ function suggestFeaturesForProject(text, memory) {
   const lower = (text + ' ' + (memory.projectTitle || '')).toLowerCase();
   const features = [];
 
+  // Netflix / Video Streaming / OTT / Movies / Cinema / Upload Movies
+  if (lower.includes('netflix') || lower.includes('hotstar') || lower.includes('hulu') || lower.includes('ott') || lower.includes('stream') || lower.includes('upload movie') || lower.includes('movie') || lower.includes('video streaming') || lower.includes('cinema')) {
+    features.push(
+      { name: 'HD Video Streaming Player (HLS/DASH)', description: 'Adaptive multi-quality video streaming player with subtitle and audio track switching', estimatedWeeks: 3 },
+      { name: 'User Movie & Video Upload Portal', description: 'Content upload dashboard with automated cloud video encoding & transcoding pipeline (FFmpeg)', estimatedWeeks: 3 },
+      { name: 'Subscription Membership Paywall', description: 'Monthly/annual subscription plans with Stripe & credit card payment integration', estimatedWeeks: 2 },
+      { name: 'Movie Catalog with Genre Search & Watchlist', description: 'Filter movies by category, search by title/actor, and add to personal watchlist', estimatedWeeks: 2 },
+      { name: 'User Profiles & Continue Watching Sync', description: 'Multi-profile support with playback progress sync and watch history', estimatedWeeks: 2 },
+      { name: 'Admin Video Content Moderation & DRM', description: 'Admin control center for managing video assets, DRM encryption, and user access', estimatedWeeks: 2 }
+    );
+  }
   // Dental / Medical / Clinic
-  if (lower.includes('dental') || lower.includes('clinic') || lower.includes('doctor') || lower.includes('hospital') || lower.includes('medical') || lower.includes('patient') || lower.includes('health')) {
+  else if (lower.includes('dental') || lower.includes('clinic') || lower.includes('doctor') || lower.includes('hospital') || lower.includes('medical') || lower.includes('patient') || lower.includes('health')) {
     features.push(
       { name: 'Online Appointment Booking System', description: 'Patients can book, reschedule, and cancel appointments online with real-time availability', estimatedWeeks: 2 },
       { name: 'Patient Portal & Medical Records', description: 'Secure login for patients to view history, prescriptions, and reports', estimatedWeeks: 3 },

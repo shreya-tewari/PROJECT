@@ -25,6 +25,18 @@ import { useRef } from 'react';
 export function suggestFeaturesForPrompt(promptText = "") {
   const text = (promptText || "").toLowerCase();
 
+  // 0. Netflix / Hotstar / Movie Streaming / OTT / Videos / Cinema / Film
+  if (text.includes("netflix") || text.includes("hotstar") || text.includes("hulu") || text.includes("movie") || text.includes("stream") || text.includes("video") || text.includes("ott") || text.includes("cinema") || text.includes("film")) {
+    return [
+      { id: "stream-player", name: "HD Video Streaming Player with Multi-Quality Resolution Switcher (HLS/DASH)", durationWeeks: 3, selected: true },
+      { id: "stream-upload", name: "User Movie Upload Portal with Cloud Transcoding Pipeline (FFmpeg & S3)", durationWeeks: 3, selected: true },
+      { id: "stream-sub", name: "Subscription Membership Paywall (Monthly/Annual Plans & Stripe Gateway)", durationWeeks: 2, selected: true },
+      { id: "stream-catalog", name: "Movie Catalog with Genre Filtering, Search & Personal Watchlist", durationWeeks: 2, selected: true },
+      { id: "stream-profile", name: "User Profiles, Watch History & Continue Watching Playback Sync", durationWeeks: 1, selected: true },
+      { id: "stream-admin", name: "Admin Video Moderation Console & DRM Content Protection Gate", durationWeeks: 2, selected: true }
+    ];
+  }
+
   // 1. Flowers / Floral / Nursery / Plants / Bouquet / Gifts
   if (text.includes("flower") || text.includes("floral") || text.includes("bouquet") || text.includes("plant") || text.includes("nursery") || text.includes("florist") || text.includes("rose") || text.includes("gift")) {
     return [
