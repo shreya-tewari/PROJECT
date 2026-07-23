@@ -123,6 +123,14 @@ export function AiChatAssistantPage() {
 
     const isMediaAI = inferredIndustry === "Media & Generative AI";
 
+    // Extract exact chat suggested features
+    const chatSuggestedFeatures = (graphMemory.suggestedFeatures || []).map((f, idx) => ({
+      id: `chat-feat-${idx}`,
+      name: f.name,
+      durationWeeks: f.estimatedWeeks || 2,
+      selected: true
+    }));
+
     const prefill = {
       companyName: "ProposalAI Solutions",
       clientName: inferredClient,
@@ -132,6 +140,7 @@ export function AiChatAssistantPage() {
       selectedTech: graphMemory.techStack || [],
       devCount: graphMemory.devCount || (isMediaAI ? 6 : 4),
       durationWeeks: graphMemory.durationWeeks || (isMediaAI ? 22 : 12),
+      features: chatSuggestedFeatures.length > 0 ? chatSuggestedFeatures : null,
       autoRun: true
     };
     setProposalPrefill(prefill);

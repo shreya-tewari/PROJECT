@@ -37,6 +37,30 @@ export function suggestFeaturesForPrompt(promptText = "") {
     ];
   }
 
+  // 0.1 Dental / Medical / Clinic / Doctor / Patient / Hospital / Appointment / Health
+  if (text.includes("dental") || text.includes("clinic") || text.includes("doctor") || text.includes("hospital") || text.includes("medical") || text.includes("patient") || text.includes("appointment") || text.includes("health")) {
+    return [
+      { id: "den-book", name: "Online Appointment Booking System", durationWeeks: 2, selected: true },
+      { id: "den-portal", name: "Patient Portal & Medical Records", durationWeeks: 3, selected: true },
+      { id: "den-dash", name: "Doctor/Staff Dashboard", durationWeeks: 2, selected: true },
+      { id: "den-sms", name: "Automated Email & SMS Reminders", durationWeeks: 1, selected: true },
+      { id: "den-price", name: "Services & Pricing Page", durationWeeks: 1, selected: true },
+      { id: "den-ai", name: "AI Virtual Health Assistant", durationWeeks: 3, selected: true }
+    ];
+  }
+
+  // 0.2 Car Rental / Vehicle / Fleet / Transport
+  if (text.includes("car") || text.includes("vehicle") || text.includes("fleet") || text.includes("rental") || text.includes("pickup") || text.includes("dropoff")) {
+    return [
+      { id: "car-fleet", name: "Vehicle Fleet Catalog with Spec Comparison & Availability Filter", durationWeeks: 2, selected: true },
+      { id: "car-reserve", name: "Pickup & Dropoff Location, Date & Time Slot Reservation System", durationWeeks: 2, selected: true },
+      { id: "car-verify", name: "Automated Driver's License & Identity Document Verification Gate", durationWeeks: 2, selected: true },
+      { id: "car-dep", name: "Security Deposit Pre-Authorization Hold & Payment Gateway", durationWeeks: 1, selected: true },
+      { id: "car-gps", name: "Live Vehicle Telemetry & GPS Mileage Tracking Integration", durationWeeks: 2, selected: true },
+      { id: "car-admin", name: "Admin Fleet Operations, Maintenance & Revenue Analytics Dashboard", durationWeeks: 2, selected: true }
+    ];
+  }
+
   // 1. Flowers / Floral / Nursery / Plants / Bouquet / Gifts
   if (text.includes("flower") || text.includes("floral") || text.includes("bouquet") || text.includes("plant") || text.includes("nursery") || text.includes("florist") || text.includes("rose") || text.includes("gift")) {
     return [
@@ -321,18 +345,19 @@ export function ProposalGeneratorPage() {
     }
   }, [promptText]);
 
-  // Auto-suggest features whenever promptText changes
+  const isPrefilledRef = useRef(false);
+
+  // Auto-suggest features whenever promptText changes (only if NOT prefilled from chat)
   useEffect(() => {
-    if (promptText && promptText.trim().length > 5) {
+    if (promptText && promptText.trim().length > 5 && !isPrefilledRef.current) {
       const suggested = suggestFeaturesForPrompt(promptText);
       setSuggestedFeatures(suggested);
-    } else {
-      setSuggestedFeatures([]);
     }
   }, [promptText]);
 
   // Dynamic timeline calculation based on selected features
   useEffect(() => {
+    if (isPrefilledRef.current) return; // Respect prefilled durationWeeks from chat
     const selectedWeeks = suggestedFeatures
       .filter(f => f.selected)
       .reduce((sum, f) => sum + f.durationWeeks, 0);
@@ -342,6 +367,7 @@ export function ProposalGeneratorPage() {
   }, [suggestedFeatures]);
 
   const toggleFeatureSelected = (id) => {
+    isPrefilledRef.current = false; // User manually interacted with checkboxes
     setSuggestedFeatures(prev =>
       prev.map(f => f.id === id ? { ...f, selected: !f.selected } : f)
     );
@@ -378,7 +404,7 @@ export function ProposalGeneratorPage() {
   // Handle prefilled data from chat & auto-run
   useEffect(() => {
     if (proposalPrefill) {
-      // 1. Populate all local states
+      isPrefilledRef.current = true;
       if (proposalPrefill.companyName) setCompanyName(proposalPrefill.companyName);
       if (proposalPrefill.clientName) setClientName(proposalPrefill.clientName);
       if (proposalPrefill.projectName) setProjectName(proposalPrefill.projectName);
@@ -387,12 +413,16 @@ export function ProposalGeneratorPage() {
       if (proposalPrefill.selectedTech) setSelectedTech(proposalPrefill.selectedTech);
       if (proposalPrefill.devCount) setDevCount(proposalPrefill.devCount);
       if (proposalPrefill.durationWeeks) setDurationWeeks(proposalPrefill.durationWeeks);
+      if (proposalPrefill.features && proposalPrefill.features.length > 0) {
+        setSuggestedFeatures(proposalPrefill.features);
+      } else if (proposalPrefill.promptText) {
+        const suggested = suggestFeaturesForPrompt(proposalPrefill.promptText);
+        setSuggestedFeatures(suggested);
+      }
 
-      // 2. Clear prefill from global state immediately so it doesn't trigger again
       const currentPrefill = { ...proposalPrefill };
       setProposalPrefill(null);
 
-      // 3. Auto-run generation workflow if requested
       if (currentPrefill.autoRun) {
         handleRunGenerator(currentPrefill);
       }
