@@ -186,10 +186,13 @@ def entity_extractor_node(state: AgentState) -> AgentState:
     if "wordpress" in lower or "elementor" in lower:
         new_title = "WordPress Custom Website"
         new_ind = "CMS & Business Web"
+    elif any(k in lower for k in ["lead", "scrape", "scraping", "linkedin", "prospect", "google sheet", "outreach", "crawler"]):
+        new_title = "AI Lead Generation & Scraping Automation App"
+        new_ind = "B2B Growth & Automation"
     elif any(k in lower for k in ["movie", "face", "video", "voice", "character", "comedy", "youtube", "laugh", "deepfake"]):
         new_title = "AI Movie & Face-Swap Video Platform"
         new_ind = "Media & Generative AI"
-    elif any(k in lower for k in ["e-commerce", "store", "shopping", "bakery", "shop"]):
+    elif any(k in lower for k in ["e-commerce", "ecommerce", "shopping", "bakery", "shop", "boutique"]) or ("store" in lower and not any(k in lower for k in ["store in", "store it", "store data", "store info"])):
         new_title = "E-Commerce Platform & Online Store"
         new_ind = "Retail & E-Commerce"
     elif any(k in lower for k in ["fintech", "payment", "banking", "wallet", "fraud"]):
