@@ -280,12 +280,7 @@ export function AppProvider({ children }) {
     if (!silent) showNotification("Started clean new chat conversation", "info");
   };
 
-  // Auto-start a fresh chat every time user navigates to aichat tab
   const setActiveTab = (tab) => {
-    if (tab === 'aichat' && prevTabRef.current !== 'aichat') {
-      // Silently start a new chat session (previous one stays in history)
-      setTimeout(() => startNewChat(true), 0);
-    }
     prevTabRef.current = tab;
     setActiveTabRaw(tab);
   };
