@@ -31,7 +31,12 @@ export function createInitialGraphState() {
 /**
  * Executes a stateful LangGraph turn for AI Chat
  */
-export async function processLangGraphTurn({ message = "", history = [], memory = null, apiKey = null }) {
+export async function processLangGraphTurn(params = {}) {
+  const message = params.message || params.userInput || "";
+  const history = params.history || [];
+  const memory = params.memory || params.currentMemory || null;
+  const apiKey = params.apiKey || null;
+
   const initialState = createInitialProposalState();
 
   const stateInput = {
