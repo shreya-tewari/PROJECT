@@ -1,5 +1,6 @@
 /**
- * ProposalState Definition with Strict Multi-Step Workflow Pipeline
+ * ProposalState Definition with Strict Conversation Phase Guard Engine
+ * Phases: DISCOVERY -> FEATURE_SELECTION -> ARCHITECTURE -> COST -> PROPOSAL -> COMPLETE
  */
 
 export function createInitialProposalState() {
@@ -22,12 +23,12 @@ export function createInitialProposalState() {
       explicitTotalBudget: null,
       avgHourlyRate: 55,
       cloudCost: 1200,
-      workflowStep: "1_REQUIREMENT_EXTRACTION", // 1_EXTRACTION -> 2_SUMMARY -> 3_FEATURES -> 4_WAIT_FEATURE_APP -> 5_ARCH -> 6_WAIT_COST_REQ -> 7_DEV_MATCH -> 8_COST -> 9_PROPOSAL
+      conversationPhase: "DISCOVERY", // DISCOVERY -> FEATURE_SELECTION -> ARCHITECTURE -> COST -> PROPOSAL -> COMPLETE
       suggestedFeatures: null,
       extractedRequirements: null,
       structuredJson: null,
     },
-    intent: "GENERAL_CONVERSATION",
+    intent: "GENERAL_CHAT",
     project: {
       title: null,
       category: null,

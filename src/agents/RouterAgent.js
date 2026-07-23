@@ -1,34 +1,37 @@
 /**
- * RouterAgent with Multi-Turn Requirement Discovery & Approval Checkpoints
- * Ensures pricing is NEVER returned during initial project description.
+ * RouterAgent with Strict Phase Guards
+ * Route transitions: DISCOVERY -> FEATURE_SELECTION -> ARCHITECTURE -> COST -> PROPOSAL
  */
 
 import { runIntentClassificationNode } from '../nodes/IntentClassificationNode';
+import { runGuardNode } from '../nodes/GuardNode';
 
 export function runRouterAgent(state) {
-  const stateWithIntent = runIntentClassificationNode(state);
+  let stateWithIntent = runIntentClassificationNode(state);
+  stateWithIntent = runGuardNode(stateWithIntent);
+
   const intent = stateWithIntent.intent;
   const memory = stateWithIntent.memory || {};
-  const currentStep = memory.workflowStep || "1_REQUIREMENT_EXTRACTION";
-  const lowerInput = (state.userInput || "").toLowerCase();
-
-  const isCostRequest = ['cost', 'price', 'budget', 'estimate', 'how much', 'quote', 'rate', 'pricing', 'dollar', 'dolar'].some(k => lowerInput.includes(k));
-  const isProposalRequest = (lowerInput.includes("sow") || lowerInput.includes("proposal") || lowerInput.includes("draft")) && (lowerInput.includes("generate") || lowerInput.includes("create") || lowerInput.includes("make"));
+  const phase = memory.conversationPhase || "DISCOVERY";
 
   let assignedAgent = "DiscoveryAgent";
 
-  if (intent === "GREETING" || intent === "MEMORY_RECALL") {
+  if (intent === "GREETING") {
     assignedAgent = "GreetingAgent";
-  } else if (isProposalRequest) {
+  } else if (intent === "PROPOSAL_REQUEST") {
     assignedAgent = "ProposalAgent";
-  } else if (isCostRequest) {
+  } else if (intent === "COST_REQUEST") {
     assignedAgent = "EstimationAgent";
-  } else if (currentStep === "4_WAITING_FOR_FEATURE_APPROVAL" || lowerInput.includes("approve") || lowerInput.includes("architecture") || lowerInput.includes("next")) {
+  } else if (intent === "FEATURE_CONFIRMATION" || (phase === "FEATURE_SELECTION" && !stateWithIntent._guard?.explicitCostRequest)) {
     assignedAgent = "ArchitectureAgent";
-  } else if (currentStep === "6_WAITING_FOR_COST_REQUEST") {
+  } else if (phase === "ARCHITECTURE" && stateWithIntent._guard?.explicitCostRequest) {
     assignedAgent = "EstimationAgent";
-  } else {
+  } else if (intent === "ARCHITECTURE_REQUEST") {
+    assignedAgent = "ArchitectureAgent";
+  } else if (intent === "PROJECT_DISCOVERY") {
     assignedAgent = "DiscoveryAgent";
+  } else {
+    assignedAgent = "LLMAgent";
   }
 
   return {

@@ -1,41 +1,40 @@
 /**
  * IntentClassificationNode
- * Single Responsibility: Classify user query into discrete intents.
+ * Classifies user intent into discrete intents:
+ * PROJECT_DISCOVERY, FEATURE_CONFIRMATION, ARCHITECTURE_REQUEST, COST_REQUEST, PROPOSAL_REQUEST, GREETING, GENERAL_CHAT.
  */
 
 export function runIntentClassificationNode(state) {
   const text = state.userInput || "";
   const lower = text.trim().toLowerCase();
   const memory = state.memory || {};
+  const phase = memory.conversationPhase || "DISCOVERY";
 
-  let intent = "GENERAL_CONVERSATION";
+  let intent = "GENERAL_CHAT";
+
+  // Explicit Proposal Request
+  const isProposalReq = (lower.includes("sow") || lower.includes("proposal") || lower.includes("export")) && 
+                        (lower.includes("generate") || lower.includes("create") || lower.includes("export") || lower.includes("make"));
+
+  // Explicit Cost Request (Only when user explicitly asks for cost/pricing)
+  const isExplicitCost = ['cost', 'price', 'budget', 'estimate', 'how much', 'quote', 'quotation', 'rate', 'pricing', 'investment', 'how much will it cost'].some(k => lower.includes(k));
 
   if (/^(hi+|hy+|hello+|hey+|good\s*(morning|afternoon|evening)|greetings|yo|sup)(\s|!|\.|$)/i.test(lower)) {
     intent = "GREETING";
-  } else if (lower.includes('remember') || lower.includes('what did i') || lower.includes('what is my name') || lower.includes('my stack') || lower.includes('my project')) {
-    intent = "MEMORY_RECALL";
-  } else if ((lower.includes('generate') && (lower.includes('sow') || lower.includes('proposal'))) || 
-             (lower.includes('create') && lower.includes('proposal')) ||
-             (lower.includes('draft') && lower.includes('sow')) ||
-             ['sow', 'generate sow', 'generate proposal'].includes(lower)) {
-    intent = "PROPOSAL_GENERATION";
-  } else if (['cost', 'price', 'budget', 'budegt', 'rate', 'how much', 'quote', 'estimate', 'dolar', 'dollar', 'cheap', 'less', 'affordable', 'low'].some(k => lower.includes(k)) || memory.isLowBudget || memory.explicitTotalBudget) {
-    intent = "COST_ESTIMATION";
-  } else if (['timeline', 'duration', 'how long', 'time for this', 'deadline', 'delivery'].some(k => lower.includes(k))) {
-    intent = "COST_ESTIMATION";
-  } else if (['bench', 'developer', 'engineer', 'who is available', 'match developer'].some(k => lower.includes(k))) {
-    intent = "BENCH_MATCHING";
-  } else if (['architecture', 'cloud', 'database', 'stack', 'infrastructure'].some(k => lower.includes(k))) {
-    intent = "ARCHITECTURE";
+  } else if (isProposalReq) {
+    intent = "PROPOSAL_REQUEST";
+  } else if (isExplicitCost) {
+    intent = "COST_REQUEST";
+  } else if (['architecture', 'tech stack', 'cloud topology', 'database', 'infrastructure'].some(k => lower.includes(k))) {
+    intent = "ARCHITECTURE_REQUEST";
   } else {
-    const isShortConfirmation = /^(all|yes|sure|ok|fine|everything|sounds good|go ahead|perfect|skip|remove|[0-9, ]+)$/i.test(lower.trim());
-    const projectKeywords = ['want', 'need', 'build', 'create', 'make', 'looking for', 'website', 'app', 'application', 'platform', 'portal', 'system', 'software', 'clinic', 'store', 'shop', 'marketplace', 'saas', 'tool', 'dashboard', 'management', 'booking', 'appointment', 'e-commerce', 'ecommerce', 'crm', 'erp', 'social', 'streaming', 'game', 'mobile', 'startup', 'project', 'movie', 'video', 'face', 'swap', 'lead', 'scrape'];
-    const hasProjectIntent = projectKeywords.some(kw => lower.includes(kw));
+    const isConfirmation = /^(all|yes|sure|ok|approved|include|include all|sounds good|go ahead|skip|remove|[0-9, ]+)$/i.test(lower.trim());
+    const isProjectDescription = ['want to build', 'need an app', 'need a website', 'thinking of creating', 'build me', 'create a platform', 'have an idea', 'i want', 'i need'].some(phrase => lower.includes(phrase));
 
-    if (hasProjectIntent && (lower.length > 15 || !isShortConfirmation)) {
-      intent = "PROJECT_DISCOVERY";
-    } else if (memory.conversationPhase === 'features_suggested' && isShortConfirmation) {
+    if (isConfirmation && (phase === "FEATURE_SELECTION" || phase === "DISCOVERY")) {
       intent = "FEATURE_CONFIRMATION";
+    } else if (isProjectDescription || lower.length > 20) {
+      intent = "PROJECT_DISCOVERY";
     }
   }
 

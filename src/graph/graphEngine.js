@@ -1,6 +1,6 @@
 /**
- * Multi-Turn Presales Consultant Pipeline
- * Flow: Requirement Extraction -> Project Summary & Features -> WAIT FOR APPROVAL -> Architecture -> WAIT FOR COST REQUEST -> Developer Matching & Cost Estimation -> SOW Proposal
+ * Multi-Turn Presales Consultant Pipeline with Conversation Phase Guard Machine
+ * Flow: DISCOVERY (Summary & Features) -> FEATURE_SELECTION (Approval) -> ARCHITECTURE (Tech Stack) -> COST (Dev Allocation & Pricing) -> PROPOSAL (SOW Document)
  */
 
 import { runPreprocessNode } from '../nodes/PreprocessNode';
@@ -24,41 +24,61 @@ export async function executeProposalGraph(inputState) {
   let state = { ...inputState };
 
   try {
-    // Step 1: Preprocess Node
+    // 1. Preprocess Input
     state = runPreprocessNode(state);
 
-    // Step 2: LLM Requirement Extraction Node (Returns Structured JSON Schema)
+    // 2. Requirement Extraction (LLM Structured JSON)
     state = await runMemoryExtractNode(state);
 
-    // Step 3: RouterAgent Coordinator
+    // 3. RouterAgent Coordinator (Intent & Phase Routing)
     state = runRouterAgent(state);
 
     const activeAgent = state._activeAgent;
 
-    // Step 4: Dispatch to Agent
+    // 4. Execute Agent Flow with Immutable State Updates
     if (activeAgent === "GreetingAgent") {
-      if (state.intent === "GREETING") {
-        state = runGreetingNode(state);
-      } else {
-        state = runMemoryRecallNode(state);
-      }
+      state = runGreetingNode(state);
     } else if (activeAgent === "DiscoveryAgent") {
-      // Summary & Features (No Pricing!)
+      // Step 1: Summary & Features (No Pricing!)
       state = await runDiscoveryAgent(state);
-      state.memory = { ...state.memory, workflowStep: "4_WAITING_FOR_FEATURE_APPROVAL" };
+      state = {
+        ...state,
+        memory: {
+          ...state.memory,
+          conversationPhase: "FEATURE_SELECTION"
+        }
+      };
     } else if (activeAgent === "ArchitectureAgent") {
-      // Feature Approval -> Technical Architecture Recommendation
+      // Step 2: Feature Approval -> Technical Architecture Recommendation
       state = runFeatureConfirmationNode(state);
       state = runArchitectureAgent(state);
-      state.memory = { ...state.memory, workflowStep: "6_WAITING_FOR_COST_REQUEST" };
+      state = {
+        ...state,
+        memory: {
+          ...state.memory,
+          conversationPhase: "ARCHITECTURE"
+        }
+      };
     } else if (activeAgent === "EstimationAgent") {
-      // Explicit Cost Request -> Developer Matching & Cost Estimation
+      // Step 3: Explicit Cost Request -> Developer Matching & Cost Estimation
       state = runEstimationAgent(state);
-      state.memory = { ...state.memory, workflowStep: "8_COST_ESTIMATED" };
+      state = {
+        ...state,
+        memory: {
+          ...state.memory,
+          conversationPhase: "COST"
+        }
+      };
     } else if (activeAgent === "ProposalAgent") {
-      // Explicit Proposal Request -> SOW Proposal Generation
+      // Step 4: Explicit Proposal Request -> SOW Proposal Generation
       state = runProposalAgent(state);
-      state.memory = { ...state.memory, workflowStep: "9_PROPOSAL_GENERATED" };
+      state = {
+        ...state,
+        memory: {
+          ...state.memory,
+          conversationPhase: "PROPOSAL"
+        }
+      };
     } else {
       // LLM Fallback Cascade
       state = await runGeminiNode(state);
@@ -70,10 +90,10 @@ export async function executeProposalGraph(inputState) {
       }
     }
 
-    // Step 5: Quality Gate & Validation Agent
+    // 5. Quality Gate & Validation Agent
     state = runValidationAgent(state);
 
-    observability.endSpan(spanId, { activeAgent, step: state.memory?.workflowStep, status: "SUCCESS" });
+    observability.endSpan(spanId, { activeAgent, phase: state.memory?.conversationPhase, status: "SUCCESS" });
     return state;
   } catch (err) {
     observability.endSpan(spanId, {}, err);
