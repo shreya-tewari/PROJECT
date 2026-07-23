@@ -79,6 +79,18 @@ export function suggestFeaturesForPrompt(promptText = "") {
     ];
   }
 
+  // 0.3 Pets / Animals / Vet / Grooming / Pet Care / Pet Selling / Pet Scaling
+  if (text.includes("pet") || text.includes("vet") || text.includes("animal") || text.includes("dog") || text.includes("cat") || text.includes("grooming")) {
+    return [
+      { id: "pet-catalog", name: "Pet Breed & Specs Profile Catalog with Health & Vaccine Status Filters", durationWeeks: 2, selected: true },
+      { id: "pet-vet", name: "Veterinary Appointment & Grooming Slot Booking Calendar", durationWeeks: 2, selected: true },
+      { id: "pet-health", name: "Pet Medical History Records, Vaccination Tracker & Diet Planner", durationWeeks: 2, selected: true },
+      { id: "pet-shop", name: "Pet Food & Accessories E-Commerce Cart & Automated Checkout", durationWeeks: 2, selected: true },
+      { id: "pet-gps", name: "Live Pet Wearable GPS Telemetry & Activity Monitoring System", durationWeeks: 2, selected: true },
+      { id: "pet-owner", name: "Pet Adoption Verification & Owner Management Dashboard", durationWeeks: 1, selected: true }
+    ];
+  }
+
   // 1. Flowers / Floral / Nursery / Plants / Bouquet / Gifts
   if (text.includes("flower") || text.includes("floral") || text.includes("bouquet") || text.includes("plant") || text.includes("nursery") || text.includes("florist") || text.includes("rose") || text.includes("gift")) {
     return [
