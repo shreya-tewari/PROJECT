@@ -1,6 +1,6 @@
 /**
- * LangGraph Service Facade
- * Provides public API methods for UI components delegating to graph/graphEngine and nodes.
+ * LangGraph Enterprise Multi-Agent Facade
+ * Provides public API methods delegating to multi-agent orchestrator, checkpoint service, and observability.
  */
 
 import { createInitialProposalState } from '../types/proposalState';
@@ -8,13 +8,18 @@ import { executeProposalGraph } from '../graph/graphEngine';
 import { runMemoryExtractNode } from '../nodes/MemoryExtractNode';
 import { runIntentClassificationNode } from '../nodes/IntentClassificationNode';
 import { runCloudPricingNode } from '../nodes/CloudPricingNode';
+import { runApiPricingNode } from '../nodes/ApiPricingNode';
 import { runDeveloperMatchingNode } from '../nodes/DeveloperMatchingNode';
 import { runHourEstimationNode } from '../nodes/HourEstimationNode';
 import { runTimelineNode } from '../nodes/TimelineNode';
 import { runCostEstimationNode } from '../nodes/CostEstimationNode';
-import { runApiPricingNode } from '../nodes/ApiPricingNode';
 import { runProposalNode } from '../nodes/ProposalNode';
 import { runSOWNode } from '../nodes/SOWNode';
+
+// Advanced Enterprise Services
+import { saveCheckpoint, loadAllCheckpoints, getProposalVersions, restoreCheckpoint } from './checkpointService';
+import { observability } from './observabilityService';
+import { industryRegistry } from './industryRegistry';
 
 /**
  * Creates initial conversation memory state
@@ -46,6 +51,7 @@ export async function processLangGraphTurn({ message = "", history = [], memory 
     actionType: finalState.response.actionType,
     devMatches: finalState.response.devMatches,
     proposalData: finalState.proposal,
+    validation: finalState._validation,
   };
 }
 
@@ -127,8 +133,21 @@ export async function generateFullSowProposal(memoryContext, userInput = "", api
   state = runProposalNode(state);
   state = runSOWNode(state);
 
+  // Save proposal checkpoint snapshot
+  saveCheckpoint(state.proposal?.proposalId, state, "Manual SOW Generation");
+
   return {
     markdown: state.response.text,
     proposalData: state.proposal,
   };
 }
+
+// Export Advanced Enterprise Capabilities
+export {
+  saveCheckpoint,
+  loadAllCheckpoints,
+  getProposalVersions,
+  restoreCheckpoint,
+  observability,
+  industryRegistry,
+};
