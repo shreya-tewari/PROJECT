@@ -1,41 +1,43 @@
 /**
  * IntentClassificationNode
- * Classifies user intent into discrete intents:
- * PROJECT_DISCOVERY, FEATURE_CONFIRMATION, ARCHITECTURE_REQUEST, COST_REQUEST, PROPOSAL_REQUEST, GREETING, GENERAL_CHAT.
+ * Re-classifies user intent dynamically on EVERY message.
+ * Memory is used only for context, never for intent persistence.
  */
 
 export function runIntentClassificationNode(state) {
-  const text = state.userInput || "";
-  const lower = text.trim().toLowerCase();
-  const memory = state.memory || {};
-  const phase = memory.conversationPhase || "DISCOVERY";
+  const rawInput = state.userInput || "";
+  const lower = rawInput.trim().toLowerCase();
 
-  let intent = "GENERAL_CHAT";
+  let intent = "GENERAL";
 
-  // Explicit Proposal Request
-  const isProposalReq = (lower.includes("sow") || lower.includes("proposal") || lower.includes("export")) && 
-                        (lower.includes("generate") || lower.includes("create") || lower.includes("export") || lower.includes("make"));
-
-  // Explicit Cost Request (Only when user explicitly asks for cost/pricing)
-  const isExplicitCost = ['cost', 'price', 'budget', 'estimate', 'how much', 'quote', 'quotation', 'rate', 'pricing', 'investment', 'how much will it cost'].some(k => lower.includes(k));
-
+  // 1. Greeting Check
   if (/^(hi+|hy+|hello+|hey+|good\s*(morning|afternoon|evening)|greetings|yo|sup)(\s|!|\.|$)/i.test(lower)) {
     intent = "GREETING";
-  } else if (isProposalReq) {
-    intent = "PROPOSAL_REQUEST";
-  } else if (isExplicitCost) {
-    intent = "COST_REQUEST";
-  } else if (['architecture', 'tech stack', 'cloud topology', 'database', 'infrastructure'].some(k => lower.includes(k))) {
-    intent = "ARCHITECTURE_REQUEST";
-  } else {
-    const isConfirmation = /^(all|yes|sure|ok|approved|include|include all|sounds good|go ahead|skip|remove|[0-9, ]+)$/i.test(lower.trim());
-    const isProjectDescription = ['want to build', 'need an app', 'need a website', 'thinking of creating', 'build me', 'create a platform', 'have an idea', 'i want', 'i need'].some(phrase => lower.includes(phrase));
-
-    if (isConfirmation && (phase === "FEATURE_SELECTION" || phase === "DISCOVERY")) {
-      intent = "FEATURE_CONFIRMATION";
-    } else if (isProjectDescription || lower.length > 20) {
-      intent = "PROJECT_DISCOVERY";
-    }
+  }
+  // 2. Proposal / SOW Generation Request
+  else if ((lower.includes("sow") || lower.includes("proposal") || lower.includes("export")) && 
+           (lower.includes("generate") || lower.includes("create") || lower.includes("make") || lower.includes("export") || lower.includes("draft"))) {
+    intent = "PROPOSAL_GENERATION";
+  }
+  // 3. Cost / Price / Budget / Timeline Request
+  else if (['cost', 'price', 'budget', 'estimate', 'how much', 'quote', 'quotation', 'rate', 'pricing', 'investment', 'approximate cost', 'time only', 'timeline'].some(k => lower.includes(k))) {
+    intent = "COST_ESTIMATION";
+  }
+  // 4. Bench Developer Allocation Request
+  else if (['bench', 'developer', 'engineer', 'who is available', 'team allocation', 'devs'].some(k => lower.includes(k))) {
+    intent = "BENCH_MATCHING";
+  }
+  // 5. Technical Architecture Request
+  else if (['architecture', 'tech stack', 'cloud topology', 'database', 'infrastructure', 'stack'].some(k => lower.includes(k))) {
+    intent = "ARCHITECTURE";
+  }
+  // 6. Feature Scope Confirmation / Selection
+  else if (/^(all|yes|sure|ok|approved|include|include all|sounds good|go ahead|skip|remove|[0-9, ]+)$/i.test(lower) && lower.length < 35) {
+    intent = "FEATURE_CONFIRMATION";
+  }
+  // 7. Project Discovery (Initial Description)
+  else if (['want to build', 'need an app', 'need a website', 'thinking of creating', 'build me', 'create a platform', 'have an idea', 'i want', 'i need', 'platform', 'app', 'website', 'system'].some(k => lower.includes(k)) || lower.length > 25) {
+    intent = "PROJECT_DISCOVERY";
   }
 
   return {

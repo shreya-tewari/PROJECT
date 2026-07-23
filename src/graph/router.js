@@ -1,37 +1,32 @@
 /**
- * Router Module for LangGraph State Flow
- * Replaces monolithic switch statements with declarative Conditional Edges.
+ * Declarative Router Module for LangGraph
+ * Maps classified intents to target node handlers with live console debugging.
  */
 
-export function routeIntentToNode(state) {
-  const intent = state.intent || "GENERAL_CONVERSATION";
+const ROUTE_MAP = {
+  GREETING: "GreetingNode",
+  PROJECT_DISCOVERY: "DiscoveryNode",
+  FEATURE_CONFIRMATION: "FeatureSelectionNode",
+  COST_ESTIMATION: "CostEstimatorNode",
+  BENCH_MATCHING: "BenchNode",
+  ARCHITECTURE: "ArchitectureNode",
+  PROPOSAL_GENERATION: "ProposalNode",
+  GENERAL: "ChatNode"
+};
 
-  switch (intent) {
-    case "GREETING":
-      return "GreetingNode";
+export function routeIntent(state) {
+  const intent = state.intent || "GENERAL";
+  const node = ROUTE_MAP[intent] || ROUTE_MAP.GENERAL;
 
-    case "MEMORY_RECALL":
-      return "MemoryRecallNode";
+  // Debugging Router Logs
+  console.log(`\n================ LangGraph Router Debug ================`);
+  console.log(`Incoming: ${state.userInput}`);
+  console.log(`Intent:   ${intent}`);
+  console.log(`Node:     ${node}`);
+  console.log(`========================================================\n`);
 
-    case "PROJECT_DISCOVERY":
-      return "DiscoveryNode";
-
-    case "FEATURE_CONFIRMATION":
-      return "FeatureConfirmationNode";
-
-    case "COST_ESTIMATION":
-      return "CostEstimationFlow";
-
-    case "ARCHITECTURE":
-      return "ArchitectureNode";
-
-    case "BENCH_MATCHING":
-      return "DeveloperMatchingNode";
-
-    case "PROPOSAL_GENERATION":
-      return "SOWNode";
-
-    default:
-      return "LLMFlow";
-  }
+  return {
+    node,
+    intent
+  };
 }
