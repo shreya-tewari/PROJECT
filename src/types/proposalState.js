@@ -1,6 +1,5 @@
 /**
- * ProposalState Definition
- * Typed State interface for LangGraph Pipeline
+ * ProposalState Definition with Strict Multi-Step Workflow Pipeline
  */
 
 export function createInitialProposalState() {
@@ -23,11 +22,12 @@ export function createInitialProposalState() {
       explicitTotalBudget: null,
       avgHourlyRate: 55,
       cloudCost: 1200,
-      conversationPhase: null, // 'discovery' | 'features_suggested' | 'features_confirmed' | 'estimated'
+      workflowStep: "1_REQUIREMENT_EXTRACTION", // 1_EXTRACTION -> 2_SUMMARY -> 3_FEATURES -> 4_WAIT_FEATURE_APP -> 5_ARCH -> 6_WAIT_COST_REQ -> 7_DEV_MATCH -> 8_COST -> 9_PROPOSAL
       suggestedFeatures: null,
       extractedRequirements: null,
+      structuredJson: null,
     },
-    intent: "GENERAL_CONVERSATION", // GREETING | MEMORY_RECALL | PROJECT_DISCOVERY | FEATURE_CONFIRMATION | COST_ESTIMATION | ARCHITECTURE | BENCH_MATCHING | PROPOSAL_GENERATION | GENERAL_CONVERSATION
+    intent: "GENERAL_CONVERSATION",
     project: {
       title: null,
       category: null,
@@ -49,7 +49,7 @@ export function createInitialProposalState() {
     proposal: null,
     response: {
       text: "",
-      actionType: "chat", // 'chat' | 'welcome' | 'cost_estimate' | 'bench_matching' | 'architecture' | 'proposal' | 'llm'
+      actionType: "chat",
       devMatches: null,
       quickReplies: [],
     },

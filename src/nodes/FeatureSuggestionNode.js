@@ -1,69 +1,81 @@
 /**
- * FeatureSuggestionNode
- * Single Responsibility: Generate 5-6 domain-tailored feature recommendations and format user choice options.
+ * LLM-Driven Feature Synthesis Node
+ * Dynamically synthesizes 5-6 features tailored specifically to the project description.
  */
 
 import { FEATURE_TEMPLATES, synthesizeZeroShotFeatures } from '../data/featureTemplates';
 
-export function suggestFeaturesForText(text, projectTitle) {
-  const lower = (text + ' ' + (projectTitle || '')).toLowerCase();
-
-  if (['lead', 'scrape', 'scraping', 'linkedin', 'prospect', 'google sheet', 'outreach', 'crawler'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.lead_generation;
-  }
-  if (['movie', 'face', 'swap', 'deepfake', 'video', 'voice', 'character', 'laugh', 'comedy'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.movie_faceswap;
-  }
-  if (['dental', 'clinic', 'doctor', 'hospital', 'medical', 'patient', 'health'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.dental_clinic;
-  }
-  if (['pet', 'pets', 'animal', 'dog', 'cat', 'grooming'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.pet_ecommerce;
-  }
-  if (['e-commerce', 'ecommerce', 'ecomm', 'store', 'shop', 'marketplace', 'bakery', 'grocery', 'sell'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.ecommerce;
-  }
-  if (['fintech', 'payment', 'bank', 'wallet', 'fraud', 'trading'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.fintech;
-  }
-  if (['ai', 'chatbot', 'resume', 'screening', 'ml', 'hiring', 'rag', 'llm'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.ai_rag;
-  }
-  if (['wordpress', 'elementor', 'cms', 'webflow'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.wordpress;
-  }
-  if (['car', 'vehicle', 'fleet', 'rental', 'auto', 'taxi'].some(k => lower.includes(k))) {
-    return FEATURE_TEMPLATES.car_rental;
-  }
-
-  return synthesizeZeroShotFeatures(text);
-}
-
-export function runFeatureSuggestionNode(state) {
+export async function runFeatureSuggestionNode(state) {
   const text = state.userInput || "";
   const memory = { ...(state.memory || {}) };
-  const features = suggestFeaturesForText(text, memory.projectTitle);
+  const lower = (text + " " + (memory.projectTitle || "")).toLowerCase();
+
+  let features = [];
+
+  if (state.apiKey && state.apiKey.length > 10) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey.trim()}`;
+      const prompt = `Synthesize 6 specific, non-generic feature modules for the software project "${memory.projectTitle || text}".
+Return strictly a valid JSON array of objects matching this schema:
+[
+  { "id": "feat-1", "name": "Feature Name", "description": "1 sentence description", "estimatedWeeks": 2 }
+]`;
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          features = JSON.parse(jsonMatch[0]);
+        }
+      }
+    } catch (e) {
+      console.warn("LLM Feature Synthesis failed, using dynamic synthesizer:", e);
+    }
+  }
+
+  if (!features || features.length === 0) {
+    if (['lead', 'scrape', 'scraping', 'linkedin', 'prospect', 'google sheet', 'outreach'].some(k => lower.includes(k))) {
+      features = FEATURE_TEMPLATES.lead_generation;
+    } else if (['movie', 'face', 'swap', 'deepfake', 'video', 'voice', 'character'].some(k => lower.includes(k))) {
+      features = FEATURE_TEMPLATES.movie_faceswap;
+    } else if (['dental', 'clinic', 'doctor', 'hospital'].some(k => lower.includes(k))) {
+      features = FEATURE_TEMPLATES.dental_clinic;
+    } else if (['pet', 'pets', 'animal', 'dog'].some(k => lower.includes(k))) {
+      features = FEATURE_TEMPLATES.pet_ecommerce;
+    } else if (['e-commerce', 'ecommerce', 'store', 'shop'].some(k => lower.includes(k))) {
+      features = FEATURE_TEMPLATES.ecommerce;
+    } else {
+      features = synthesizeZeroShotFeatures(text);
+    }
+  }
 
   memory.suggestedFeatures = features;
-  memory.conversationPhase = 'features_suggested';
+  memory.workflowStep = "3_FEATURE_RECOMMENDATION";
 
   const totalWeeks = features.reduce((sum, f) => sum + (f.estimatedWeeks || f.durationWeeks || 2), 0);
 
-  let responseText = `Great! I'd love to help you build **${memory.projectTitle || 'Software Application'}**. 🚀\n\n`;
-  responseText += `Based on your requirements, here are the **key features** I'd recommend for this project:\n\n`;
+  let responseText = `📋 **Structured Project Summary & Features for ${memory.projectTitle || 'Software App'}**\n\n`;
+  responseText += `- **Industry**: ${memory.industry || 'Software & SaaS'}\n`;
+  responseText += `- **Complexity Tier**: ${memory.complexityScore >= 8 ? 'Enterprise' : memory.complexityScore >= 5 ? 'Large' : 'Medium'} Tier\n`;
+  responseText += `- **Recommended Stack**: ${memory.techStack?.join(', ') || 'React, Node.js, AWS'}\n\n`;
+  responseText += `💡 **Recommended 6 Key Feature Modules:**\n\n`;
 
   features.forEach((feat, index) => {
     const w = feat.estimatedWeeks || feat.durationWeeks || 2;
     responseText += `**${index + 1}. ${feat.name}** (~${w} week${w > 1 ? 's' : ''})\n${feat.description || feat.name}\n\n`;
   });
 
-  responseText += `📊 **Estimated total development time**: ~${totalWeeks} weeks if all features are included.\n\n`;
-  responseText += `Which of these features would you like to include? You can:\n`;
-  responseText += `- Say **"all"** to include everything\n`;
-  responseText += `- List the numbers you want (e.g. *"1, 2, 4, 5"*)\n`;
-  responseText += `- Remove some (e.g. *"skip 3 and 6"*)\n`;
-  responseText += `- Add your own custom feature\n\n`;
-  responseText += `Once you confirm the features, I'll calculate the **exact timeline and cost estimate** for you.`;
+  responseText += `⏱️ **Estimated Total Scope**: ~${totalWeeks} weeks of modular engineering work.\n\n`;
+  responseText += `Do you approve this feature scope? You can:\n`;
+  responseText += `- Reply **"Approved"** or **"Include All"** to proceed to the Technical Cloud Architecture\n`;
+  responseText += `- Specify numbers to customize (e.g. *"Include 1, 2, 4, 5"* or *"Skip 3"*)\n`;
 
   return {
     ...state,
@@ -73,7 +85,7 @@ export function runFeatureSuggestionNode(state) {
       text: responseText,
       actionType: "chat",
       devMatches: null,
-      quickReplies: ["Include all features", "Calculate cost estimate", "Show architecture"],
+      quickReplies: ["Approve Feature Scope", "Customize Features", "Show Technical Architecture"],
     },
   };
 }

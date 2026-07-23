@@ -1,10 +1,8 @@
 /**
- * Multi-Agent LangGraph Coordinated Pipeline
- * Coordinates specialized agents (RouterAgent, DiscoveryAgent, EstimationAgent, ArchitectureAgent, ProposalAgent, ValidationAgent)
- * with Observability (LangSmith/OpenTelemetry telemetry spans), Checkpointing, and Retry Policies.
+ * Multi-Step LangGraph Workflow Pipeline with Approval Checkpoints
+ * Requirement Extraction -> Summary & Features -> Feature Approval -> Architecture -> Cost Request -> Dev Matching & Cost Estimation -> SOW Proposal
  */
 
-import { createInitialProposalState } from '../types/proposalState';
 import { runPreprocessNode } from '../nodes/PreprocessNode';
 import { runMemoryExtractNode } from '../nodes/MemoryExtractNode';
 import { runRouterAgent } from '../agents/RouterAgent';
@@ -20,25 +18,24 @@ import { runGeminiNode } from '../nodes/GeminiNode';
 import { runOpenAINode } from '../nodes/OpenAINode';
 import { runFallbackNode } from '../nodes/FallbackNode';
 import { observability } from '../services/observabilityService';
-import { executeWithRetry } from '../services/retryService';
 
 export async function executeProposalGraph(inputState) {
   const spanId = observability.startSpan("executeProposalGraph", { userInput: inputState.userInput });
   let state = { ...inputState };
 
   try {
-    // 1. Preprocess Node
+    // Step 1: Preprocess Node
     state = runPreprocessNode(state);
 
-    // 2. Memory Extract Node
-    state = runMemoryExtractNode(state);
+    // Step 2: LLM-Driven Requirement Extraction Node
+    state = await runMemoryExtractNode(state);
 
-    // 3. RouterAgent (Multi-Agent Dispatcher)
+    // Step 3: RouterAgent (Multi-Agent Dispatcher)
     state = runRouterAgent(state);
 
     const activeAgent = state._activeAgent;
 
-    // 4. Delegate execution to assigned Specialized Agent
+    // Step 4: Execute Agent Flow matching strict workflow order
     if (activeAgent === "GreetingAgent") {
       if (state.intent === "GREETING") {
         state = runGreetingNode(state);
@@ -46,33 +43,37 @@ export async function executeProposalGraph(inputState) {
         state = runMemoryRecallNode(state);
       }
     } else if (activeAgent === "DiscoveryAgent") {
-      if (state.intent === "FEATURE_CONFIRMATION") {
-        state = runFeatureConfirmationNode(state);
-        state = runEstimationAgent(state);
-      } else {
-        state = runDiscoveryAgent(state);
-      }
-    } else if (activeAgent === "EstimationAgent") {
-      state = runEstimationAgent(state);
+      // Step 1 -> Step 2 -> Step 3
+      state = await runDiscoveryAgent(state);
+      state.memory.workflowStep = "4_WAITING_FOR_FEATURE_APPROVAL";
     } else if (activeAgent === "ArchitectureAgent") {
+      // Step 4 Approval -> Step 5 Architecture Recommendation
+      state = runFeatureConfirmationNode(state);
       state = runArchitectureAgent(state);
+      state.memory.workflowStep = "6_WAITING_FOR_COST_REQUEST";
+    } else if (activeAgent === "EstimationAgent") {
+      // Step 6 Cost Request -> Step 7 Dev Matching -> Step 8 Cost Estimation
+      state = runEstimationAgent(state);
+      state.memory.workflowStep = "8_COST_ESTIMATED";
     } else if (activeAgent === "ProposalAgent") {
+      // Step 9 Proposal Generation
       state = runProposalAgent(state);
+      state.memory.workflowStep = "9_PROPOSAL_GENERATED";
     } else {
-      // LLMAgent with Retry Policy & Fallback Cascade
-      state = await executeWithRetry(() => runGeminiNode(state), { maxRetries: 1 });
+      // LLMAgent with Fallback Cascade
+      state = await runGeminiNode(state);
       if (state._llmFailed) {
-        state = await executeWithRetry(() => runOpenAINode(state), { maxRetries: 1 });
+        state = await runOpenAINode(state);
         if (state._openaiFailed) {
           state = runFallbackNode(state);
         }
       }
     }
 
-    // 5. ValidationAgent (Quality Gate & Reasoner)
+    // Step 5: Quality Gate & Validation Agent
     state = runValidationAgent(state);
 
-    observability.endSpan(spanId, { activeAgent, status: "SUCCESS" });
+    observability.endSpan(spanId, { activeAgent, step: state.memory?.workflowStep, status: "SUCCESS" });
     return state;
   } catch (err) {
     observability.endSpan(spanId, {}, err);
