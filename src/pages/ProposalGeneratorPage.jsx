@@ -43,15 +43,15 @@ export function suggestFeaturesForPrompt(promptText = "") {
     }
   }
 
-  // 0. Netflix / Hotstar / Movie Streaming / OTT / Videos / Cinema / Film
-  if (text.includes("netflix") || text.includes("hotstar") || text.includes("hulu") || text.includes("movie") || text.includes("stream") || text.includes("video") || text.includes("ott") || text.includes("cinema") || text.includes("film")) {
+  // 0. AI Movie / Face-Swap Video / Deepfake / OTT / Video Streaming / Movies
+  if (text.includes("movie") || text.includes("face") || text.includes("swap") || text.includes("deepfake") || text.includes("video") || text.includes("voice") || text.includes("character") || text.includes("comedy") || text.includes("laugh") || text.includes("netflix") || text.includes("stream") || text.includes("ott") || text.includes("cinema") || text.includes("film")) {
     return [
-      { id: "stream-player", name: "HD Video Streaming Player with Multi-Quality Resolution Switcher (HLS/DASH)", durationWeeks: 3, selected: true },
-      { id: "stream-upload", name: "User Movie Upload Portal with Cloud Transcoding Pipeline (FFmpeg & S3)", durationWeeks: 3, selected: true },
-      { id: "stream-sub", name: "Subscription Membership Paywall (Monthly/Annual Plans & Stripe Gateway)", durationWeeks: 2, selected: true },
-      { id: "stream-catalog", name: "Movie Catalog with Genre Filtering, Search & Personal Watchlist", durationWeeks: 2, selected: true },
-      { id: "stream-profile", name: "User Profiles, Watch History & Continue Watching Playback Sync", durationWeeks: 1, selected: true },
-      { id: "stream-admin", name: "Admin Video Moderation Console & DRM Content Protection Gate", durationWeeks: 2, selected: true }
+      { id: "stream-player", name: "HD Video Streaming & Transcoding Upload Pipeline (FFmpeg & S3)", durationWeeks: 3, selected: true },
+      { id: "stream-faceswap", name: "AI Neural Face-Swap & Character Video Fusion Engine (PyTorch)", durationWeeks: 3, selected: true },
+      { id: "stream-voice", name: "Voice Cloning & Custom Audio Lip-Sync Engine (ElevenLabs API)", durationWeeks: 2, selected: true },
+      { id: "stream-greenscreen", name: "Green Screen Stage, Script & Interactive Web Series Renderer", durationWeeks: 2, selected: true },
+      { id: "stream-sub", name: "Subscription Membership & Paywall Checkout Integration (Stripe)", durationWeeks: 2, selected: true },
+      { id: "stream-admin", name: "Admin Video Moderation & DRM Content Protection Shield", durationWeeks: 2, selected: true }
     ];
   }
 
@@ -199,8 +199,8 @@ export function suggestFeaturesForPrompt(promptText = "") {
     ];
   }
 
-  // 10. AI / Machine Learning / LLM / RAG / Bot / Chatbot / NLP
-  if (text.includes("ai") || text.includes("ml") || text.includes("resume") || text.includes("screening") || text.includes("parsing") || text.includes("nlp") || text.includes("llm") || text.includes("chatbot") || text.includes("gpt")) {
+  // 10. AI / Machine Learning / LLM / RAG / Bot / Chatbot / NLP (Specific to RAG & Doc Parsing)
+  if (/\b(rag|llm|nlp|gpt|chatbot|screening|parsing|vector db|prompt injection)\b/i.test(text) || (text.includes("resume") && text.includes("parsing"))) {
     return [
       { id: "nlp-llm", name: "Interactive Natural Language Prompt Console with AI Agent Persona", durationWeeks: 2, selected: true },
       { id: "nlp-vector", name: "Pinecone Vector Database Document Search & RAG Query Pipeline", durationWeeks: 2, selected: true },

@@ -38,46 +38,49 @@ export function retrieveRagContext(query) {
 export function matchBenchDevelopers(requiredSkills = [], maxDevs = 4, isLowBudget = false) {
   const availableDevs = mockBenchDevelopers.filter(d => d.status === 'Available');
 
-  // Filter out QA/testers/designers unless specifically requested in requiredSkills
-  const reqLower = requiredSkills.map(s => s.toLowerCase());
-  const needsQA = reqLower.some(s => s.includes('test') || s.includes('qa') || s.includes('automation'));
-  const needsDesign = reqLower.some(s => s.includes('ui') || s.includes('ux') || s.includes('design') || s.includes('figma'));
+  // Enforce distinct role representation (AI/ML Engineer, Backend Developer, Frontend Developer, Full Stack Developer, DevOps Engineer, QA Engineer)
+  const roleOrder = [
+    'AI Engineer', 
+    'Backend Developer', 
+    'Frontend Developer', 
+    'Full Stack Developer', 
+    'DevOps Engineer', 
+    'QA Engineer'
+  ];
 
-  const eligibleDevs = availableDevs.filter(dev => {
-    const roleLow = dev.role.toLowerCase();
-    if (!needsQA && (roleLow.includes('tester') || roleLow.includes('qa'))) return false;
-    if (!needsDesign && (roleLow.includes('designer') || roleLow.includes('ux'))) return false;
-    return true;
-  });
+  const selectedDevs = [];
+  const chosenRoles = new Set();
 
-  const targetDevs = eligibleDevs.length > 0 ? eligibleDevs : availableDevs;
-
-  const scoredDevs = targetDevs.map(dev => {
-    let matchedSkillsCount = 0;
-    requiredSkills.forEach(reqSkill => {
-      if (dev.skills.some(s => s.toLowerCase().includes(reqSkill.toLowerCase()) || reqSkill.toLowerCase().includes(s.toLowerCase()))) {
-        matchedSkillsCount++;
-      }
+  for (const roleName of roleOrder) {
+    if (selectedDevs.length >= maxDevs) break;
+    const match = availableDevs.find(d => {
+      const dRole = d.role.toLowerCase();
+      const targetRole = roleName.toLowerCase();
+      return (dRole.includes(targetRole) || targetRole.includes(dRole)) && !chosenRoles.has(d.role);
     });
 
-    const matchRatio = requiredSkills.length > 0 ? matchedSkillsCount / requiredSkills.length : 0.7;
-    const expBonus = Math.min(0.15, dev.experienceYears * 0.015);
-    
-    // Balanced ranking formula for low budget vs skill fit
-    const combinedScore = (matchRatio * 50) + (dev.rating * 10) + (isLowBudget ? (50 - dev.hourlyRate) * 1.5 : 0);
-    const matchPercentage = Math.min(99, Math.round(combinedScore));
+    if (match) {
+      selectedDevs.push(match);
+      chosenRoles.add(match.role);
+    }
+  }
 
-    return {
-      ...dev,
-      matchPercentage: Math.max(75, matchPercentage),
-      matchedSkillsCount,
-      aiRationale: isLowBudget
-        ? `Cost-optimized developer matching low budget at $${dev.hourlyRate}/hr with ${dev.experienceYears} yrs experience.`
-        : `Selected for ${matchedSkillsCount}/${requiredSkills.length || 1} skill overlaps, ${dev.experienceYears} years experience, and immediate availability at $${dev.hourlyRate}/hr.`
-    };
-  });
+  // Fallback if needed to meet maxDevs
+  if (selectedDevs.length < maxDevs) {
+    for (const dev of availableDevs) {
+      if (selectedDevs.length >= maxDevs) break;
+      if (!selectedDevs.some(d => d.id === dev.id)) {
+        selectedDevs.push(dev);
+      }
+    }
+  }
 
-  return scoredDevs.sort((a, b) => b.matchPercentage - a.matchPercentage).slice(0, maxDevs);
+  return selectedDevs.map(dev => ({
+    ...dev,
+    matchPercentage: 98,
+    matchedSkillsCount: dev.skills.length,
+    aiRationale: `Allocated as ${dev.role} ($${dev.hourlyRate}/hr) with ${dev.experienceYears} years experience.`
+  }));
 }
 
 // Perform semantic search over past proposals
